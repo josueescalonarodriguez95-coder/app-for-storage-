@@ -1,0 +1,33 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font: var(--text-body);
+  letter-spacing: var(--tracking-body);
+  color: var(--color-text-primary);
+  background: var(--gradient-app-background);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Los campos de texto nunca bajan de 16px: por debajo, Safari en iOS hace zoom al enfocar. */
+input,
+select,
+textarea,
+button {
+  font-family: var(--font-family);
+  font-size: 16px;
+}
+
+button {
+  cursor: pointer;
+}
