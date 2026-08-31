@@ -14,6 +14,13 @@
   filter: brightness(1.08);
 }
 
+.fila-inventario {
+  background: transparent;
+}
+.fila-inventario:hover {
+  background: rgba(120, 120, 128, .09);
+}
+
 @keyframes toast-in-out {
   0% { opacity: 0; transform: translateY(14px) scale(.97); }
   14% { opacity: 1; transform: none; }

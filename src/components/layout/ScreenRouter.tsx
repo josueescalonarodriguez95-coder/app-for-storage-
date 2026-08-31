@@ -1,12 +1,13 @@
 import { useAppState } from '../../state/AppStateContext'
 import { Placeholder } from '../../screens/Placeholder'
+import { InventoryScreen } from '../../screens/InventoryScreen'
 
 export function ScreenRouter() {
   const { state } = useAppState()
 
   switch (state.screen) {
     case 'inv':
-      return <Placeholder nombre="Inventario" />
+      return <InventoryScreen />
     case 'scan':
       return <Placeholder nombre="Escáner QR" />
     case 'entrada':
