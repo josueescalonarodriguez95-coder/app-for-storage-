@@ -21,6 +21,13 @@
   background: rgba(120, 120, 128, .09);
 }
 
+.boton-cristal {
+  background: rgba(120, 120, 128, .12);
+}
+.boton-cristal:hover {
+  background: rgba(120, 120, 128, .2);
+}
+
 @keyframes toast-in-out {
   0% { opacity: 0; transform: translateY(14px) scale(.97); }
   14% { opacity: 1; transform: none; }

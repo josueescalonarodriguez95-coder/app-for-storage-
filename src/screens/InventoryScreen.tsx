@@ -1,24 +1,16 @@
 import { useAppState } from '../state/AppStateContext'
+import { nombreCliente } from '../state/selectors'
 import type { Filtro } from '../state/types'
 import { EstadoObjetoBadge } from '../components/ui/Badge'
 import { SearchField } from '../components/ui/SearchField'
 import { SegmentedControl } from '../components/ui/SegmentedControl'
-import type { Cliente, Objeto } from '../db/schema'
+import type { Objeto } from '../db/schema'
 import { formatFecha } from '../utils/fecha'
+import { formatUbicacion } from '../utils/formato'
 
 const FILTROS: Filtro[] = ['Todos', 'En bodega', 'Fuera', 'Guacal', 'Obra', 'Pedestal']
 
 const COLUMNAS = '96px 1fr 168px 126px 106px 104px'
-
-function ubicacionTexto(item: Objeto): string {
-  if (!item.ubicacion) return '—'
-  const { nave, rack, nivel } = item.ubicacion
-  return `${nave} · ${rack} · ${nivel}`
-}
-
-function clienteNombre(clientes: Cliente[], clienteId: string): string {
-  return clientes.find((c) => c.id === clienteId)?.nombre ?? 'Sin cliente'
-}
 
 function coincide(item: Objeto, cliente: string, ubic: string, query: string, filtro: Filtro): boolean {
   const q = query.trim().toLowerCase()
@@ -37,7 +29,7 @@ export function InventoryScreen() {
   const { state, dispatch } = useAppState()
 
   const filas = state.items
-    .map((item) => ({ item, cliente: clienteNombre(state.clientes, item.clienteId), ubic: ubicacionTexto(item) }))
+    .map((item) => ({ item, cliente: nombreCliente(state.clientes, item.clienteId), ubic: formatUbicacion(item.ubicacion) }))
     .filter(({ item, cliente, ubic }) => coincide(item, cliente, ubic, state.query, state.filtro))
 
   const abrir = (id: string) => {

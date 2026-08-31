@@ -46,6 +46,13 @@ export async function listPiezas(contenedorId: string) {
   return piezas.sort((a, b) => (a.ref ?? '').localeCompare(b.ref ?? ''))
 }
 
+/** Historial de un objeto, del movimiento más antiguo al más reciente. Sólo lectura, append-only. */
+export async function listMovimientosByObjeto(objetoId: string) {
+  const db = await getDB()
+  const movimientos = await db.getAllFromIndex('movimientos', 'objetoId', objetoId)
+  return movimientos.sort((a, b) => a.fechaHora.localeCompare(b.fechaHora))
+}
+
 export async function listClientes() {
   const db = await getDB()
   return db.getAll('clientes')

@@ -1,4 +1,9 @@
+import type { Cliente } from '../db/schema'
 import type { AppState } from './types'
+
+export function nombreCliente(clientes: Cliente[], clienteId: string): string {
+  return clientes.find((c) => c.id === clienteId)?.nombre ?? 'Sin cliente'
+}
 
 export function tituloPantalla(state: AppState): { kicker: string; title: string } {
   switch (state.screen) {
