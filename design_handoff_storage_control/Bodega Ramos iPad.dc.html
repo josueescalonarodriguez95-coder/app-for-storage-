@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<style>
+body{margin:0;background:#e8e6e3}
+@keyframes ip-scan{0%{top:6%}100%{top:90%}}
+@keyframes ip-toast{0%{opacity:0;transform:translateY(14px) scale(.97)}14%{opacity:1;transform:none}86%{opacity:1;transform:none}100%{opacity:0;transform:translateY(8px) scale(.99)}}
+a{color:#c8321c}
+a:hover{color:#e0472f}
+::selection{background:rgba(200,50,28,.18)}
+::-webkit-scrollbar{width:0;height:0}
+</style>
+</helmet>
+
+<div style="padding:40px 44px 64px;font-family:-apple-system,'SF Pro Text','SF Pro Display',system-ui,sans-serif;color:#1c1c1e;background:#e8e6e3">
+
+<div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+<img src="assets/ramos-logo.jpeg" alt="Ramos Delivery" style="display:block;width:46px;height:46px;object-fit:contain;background:#fff;border-radius:11px">
+<div>
+<div style="font-size:19px;font-weight:640;letter-spacing:-0.02em">Storage Control · iPadOS</div>
+<div style="font-size:13px;color:#6c6c70;letter-spacing:-0.01em">Prototipo navegable · iPad Pro 13" horizontal</div>
+</div>
+</div>
+
+<div style="width:1224px;padding:16px;border-radius:44px;background:linear-gradient(160deg,#3a3a3c,#1c1c1e);box-shadow:0 30px 70px rgba(0,0,0,.3)">
+<div style="width:1192px;height:834px;border-radius:30px;overflow:hidden;position:relative;background:radial-gradient(120% 110% at 12% 0%,#f4efe9 0%,#e7e3de 42%,#dcdcd8 100%)">
+
+<div style="position:absolute;inset:0;display:flex">
+
+<nav style="width:250px;flex:none;padding:14px 12px 12px;display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,.5);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border-right:.5px solid rgba(0,0,0,.1)">
+
+<div style="display:flex;align-items:center;gap:11px;padding:8px 10px 14px">
+<img src="assets/ramos-logo.jpeg" alt="Ramos Delivery" style="display:block;width:34px;height:34px;object-fit:contain;background:#fff;border-radius:9px">
+<div style="min-width:0">
+<div style="font-size:15px;font-weight:640;letter-spacing:-0.02em">Storage Control</div>
+<div style="font-size:11px;color:#6c6c70">Nave 2 · Bodega Sur</div>
+</div>
+</div>
+
+<div style="font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#8e8e93;padding:6px 10px 6px">Operación</div>
+
+<sc-for list="{{ navItems }}" as="n" hint-placeholder-count="6">
+<button onClick="{{ n.go }}" style-hover="background:rgba(120,120,128,.12)" style="appearance:none;border:0;cursor:pointer;width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:10px 11px;min-height:44px;border-radius:13px;font-family:inherit;font-size:15px;font-weight:{{ n.fw }};letter-spacing:-0.015em;transition:background .15s,color .15s;background:{{ n.bg }};color:{{ n.fg }};box-shadow:{{ n.sh }}">
+<span style="width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;color:{{ n.ic }}">{{ n.icon }}</span>
+<span style="flex:1">{{ n.label }}</span>
+<sc-if value="{{ n.badge }}" hint-placeholder-val="{{ false }}">
+<span style="font-size:12px;font-weight:600;padding:1px 8px;border-radius:9px;background:{{ n.badgeBg }};color:{{ n.badgeFg }}">{{ n.badge }}</span>
+</sc-if>
+</button>
+</sc-for>
+
+<div style="margin-top:auto;display:flex;align-items:center;gap:11px;padding:10px;border-radius:16px;background:rgba(255,255,255,.6);box-shadow:0 1px 3px rgba(0,0,0,.07)">
+<span style="width:38px;height:38px;flex:none;border-radius:50%;background:linear-gradient(150deg,#e0472f,#b52a16);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:640;letter-spacing:.01em">{{ userIni }}</span>
+<span style="min-width:0;flex:1">
+<span style="display:block;font-size:14px;font-weight:600;letter-spacing:-0.015em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ userNombre }}</span>
+<span style="display:block;font-size:11px;color:#6c6c70">{{ userRol }}</span>
+</span>
+</div>
+</nav>
+
+<div style="flex:1;min-width:0;display:flex;flex-direction:column">
+
+<header style="flex:none;padding:16px 26px 14px;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;background:rgba(255,255,255,.42);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border-bottom:.5px solid rgba(0,0,0,.09)">
+<div style="min-width:0">
+<div style="font-size:12px;font-weight:600;letter-spacing:0.02em;color:#8e8e93">{{ kicker }}</div>
+<h2 style="margin:2px 0 0;font-size:30px;font-weight:700;letter-spacing:-0.035em;line-height:1.1">{{ title }}</h2>
+</div>
+<div style="display:flex;align-items:center;gap:8px;flex:none">
+<div style="text-align:center;padding:7px 15px;border-radius:14px;background:rgba(255,255,255,.72);box-shadow:0 1px 2px rgba(0,0,0,.06)">
+<div style="font-size:11px;color:#6c6c70;letter-spacing:.01em">En bodega</div>
+<div style="font-size:19px;font-weight:680;letter-spacing:-0.02em;line-height:1.2">{{ countIn }}</div>
+</div>
+<div style="text-align:center;padding:7px 15px;border-radius:14px;background:rgba(255,255,255,.72);box-shadow:0 1px 2px rgba(0,0,0,.06)">
+<div style="font-size:11px;color:#6c6c70;letter-spacing:.01em">Fuera</div>
+<div style="font-size:19px;font-weight:680;letter-spacing:-0.02em;line-height:1.2">{{ countOut }}</div>
+</div>
+</div>
+</header>
+
+<div style="flex:1;min-height:0;overflow:auto">
+
+<sc-if value="{{ isInv }}" hint-placeholder-val="{{ true }}">
+<div style="padding:18px 26px 30px">
+<div style="display:flex;gap:10px;align-items:center;margin-bottom:14px">
+<div style="flex:1;display:flex;align-items:center;gap:8px;border-radius:14px;background:rgba(120,120,128,.14);padding:0 14px;min-height:44px">
+<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+<input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Buscar número, cliente, ubicación…" style="flex:1;appearance:none;border:0;outline:0;background:transparent;font-family:inherit;font-size:16px;letter-spacing:-0.015em;color:#1c1c1e">
+</div>
+<button onClick="{{ goEntrada }}" style-hover="filter:brightness(1.08)" style="appearance:none;border:0;cursor:pointer;min-height:44px;padding:0 20px;border-radius:14px;font-family:inherit;font-size:15px;font-weight:600;letter-spacing:-0.015em;color:#fff;background:linear-gradient(180deg,#e0472f,#c8321c);box-shadow:0 2px 8px rgba(200,50,28,.32);white-space:nowrap">Nueva entrada</button>
+</div>
+
+<div style="display:flex;gap:4px;padding:3px;border-radius:13px;background:rgba(120,120,128,.12);width:fit-content;margin-bottom:16px">
+<sc-for list="{{ filters }}" as="f" hint-placeholder-count="6">
+<button onClick="{{ f.onClick }}" style="appearance:none;border:0;cursor:pointer;padding:8px 15px;min-height:36px;border-radius:10px;font-family:inherit;font-size:14px;font-weight:{{ f.fw }};letter-spacing:-0.015em;white-space:nowrap;transition:background .15s;background:{{ f.bg }};color:{{ f.fg }};box-shadow:{{ f.sh }}">{{ f.label }}</button>
+</sc-for>
+</div>
+
+<div style="border-radius:20px;background:rgba(255,255,255,.78);box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden">
+<div style="display:grid;grid-template-columns:92px minmax(0,1fr) 148px 116px 98px 100px;gap:0;padding:11px 18px;font-size:12px;font-weight:600;color:#8e8e93;letter-spacing:0.01em;border-bottom:.5px solid rgba(0,0,0,.08)">
+<span>N.º</span><span>Descripción</span><span>Cliente</span><span>Ubicación</span><span>Entrada</span><span>Estado</span>
+</div>
+<sc-for list="{{ rows }}" as="it" hint-placeholder-count="7">
+<button onClick="{{ it.open }}" style-hover="background:rgba(120,120,128,.09)" style="appearance:none;border:0;cursor:pointer;width:100%;text-align:left;display:grid;grid-template-columns:92px minmax(0,1fr) 148px 116px 98px 100px;align-items:center;gap:0;padding:14px 18px;font-family:inherit;font-size:15px;letter-spacing:-0.015em;background:transparent;border-bottom:.5px solid rgba(0,0,0,.06);transition:background .12s">
+<span style="font-weight:640;font-variant-numeric:tabular-nums">{{ it.id }}</span>
+<span style="padding-right:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ it.desc }}</span>
+<span style="color:#6c6c70;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:12px">{{ it.cliente }}</span>
+<span style="font-variant-numeric:tabular-nums;font-size:14px">{{ it.ubic }}</span>
+<span style="color:#6c6c70;font-size:14px;font-variant-numeric:tabular-nums">{{ it.entrada }}</span>
+<span><span style="display:inline-block;padding:3px 10px;border-radius:9px;font-size:12px;font-weight:600;background:{{ it.stBg }};color:{{ it.stFg }}">{{ it.estado }}</span></span>
+</button>
+</sc-for>
+</div>
+<p style="margin:12px 0 0;font-size:13px;color:#8e8e93;letter-spacing:-0.01em">{{ resultLine }}</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ isScan }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;height:100%;min-height:0">
+<div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#0f0f10;margin:16px 0 16px 16px;border-radius:24px;overflow:hidden">
+<div style="position:absolute;top:16px;left:18px;padding:5px 12px;border-radius:11px;background:rgba(255,255,255,.14);backdrop-filter:blur(20px);font-size:12px;font-weight:500;color:rgba(255,255,255,.85)">Cámara trasera · lector QR</div>
+<div style="position:relative;width:326px;height:326px;border-radius:26px;border:1px solid rgba(255,255,255,.22)">
+<div style="position:absolute;top:-1px;left:-1px;width:52px;height:52px;border-top:4px solid #e0472f;border-left:4px solid #e0472f;border-radius:26px 0 0 0"></div>
+<div style="position:absolute;top:-1px;right:-1px;width:52px;height:52px;border-top:4px solid #e0472f;border-right:4px solid #e0472f;border-radius:0 26px 0 0"></div>
+<div style="position:absolute;bottom:-1px;left:-1px;width:52px;height:52px;border-bottom:4px solid #e0472f;border-left:4px solid #e0472f;border-radius:0 0 0 26px"></div>
+<div style="position:absolute;bottom:-1px;right:-1px;width:52px;height:52px;border-bottom:4px solid #e0472f;border-right:4px solid #e0472f;border-radius:0 0 26px 0"></div>
+<div style="position:absolute;left:14px;right:14px;height:2px;border-radius:2px;background:#e0472f;box-shadow:0 0 18px 3px rgba(224,71,47,.6);animation:ip-scan 1.7s ease-in-out infinite alternate"></div>
+<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.2);font-size:13px">Vista de cámara</div>
+</div>
+<div style="position:absolute;bottom:22px;left:0;right:0;display:flex;justify-content:center;gap:10px">
+<button onClick="{{ doScan }}" style-hover="filter:brightness(1.08)" style="appearance:none;border:0;cursor:pointer;min-height:48px;padding:0 22px;border-radius:16px;font-family:inherit;font-size:16px;font-weight:600;letter-spacing:-0.015em;color:#fff;background:linear-gradient(180deg,#e0472f,#c8321c);box-shadow:0 3px 12px rgba(0,0,0,.35)">Simular escaneo</button>
+<button onClick="{{ goInv }}" style-hover="background:rgba(255,255,255,.26)" style="appearance:none;cursor:pointer;border:0;min-height:48px;padding:0 22px;border-radius:16px;font-family:inherit;font-size:16px;font-weight:500;letter-spacing:-0.015em;color:#fff;background:rgba(255,255,255,.16);backdrop-filter:blur(20px)">Buscar a mano</button>
+</div>
+</div>
+
+<aside style="width:384px;flex:none;padding:16px;display:flex;flex-direction:column;gap:12px;overflow:auto">
+<sc-if value="{{ scanEmpty }}" hint-placeholder-val="{{ true }}">
+<div style="border-radius:20px;background:rgba(255,255,255,.76);box-shadow:0 1px 3px rgba(0,0,0,.08);padding:22px;font-size:15px;line-height:1.55;letter-spacing:-0.015em;color:#48484a">Apunta la cámara al código del guacal o de la pieza. La ficha se abre aquí y puedes marcar entrada o salida sin salir de esta pantalla.</div>
+</sc-if>
+
+<sc-if value="{{ scanHit }}" hint-placeholder-val="{{ false }}">
+<div style="border-radius:20px;background:rgba(255,255,255,.82);box-shadow:0 1px 3px rgba(0,0,0,.08);padding:20px">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:5px">
+<div style="font-size:28px;font-weight:700;letter-spacing:-0.03em">{{ hit.id }}</div>
+<span style="display:inline-block;padding:3px 10px;border-radius:9px;font-size:12px;font-weight:600;background:{{ hit.stBg }};color:{{ hit.stFg }}">{{ hit.estado }}</span>
+</div>
+<div style="font-size:15px;letter-spacing:-0.015em;margin-bottom:16px">{{ hit.desc }}</div>
+<div style="border-radius:14px;background:rgba(120,120,128,.1);overflow:hidden">
+<div style="display:flex;justify-content:space-between;padding:11px 14px;font-size:14px;border-bottom:.5px solid rgba(0,0,0,.07)"><span style="color:#6c6c70">Cliente</span><span style="font-weight:560">{{ hit.cliente }}</span></div>
+<div style="display:flex;justify-content:space-between;padding:11px 14px;font-size:14px;border-bottom:.5px solid rgba(0,0,0,.07)"><span style="color:#6c6c70">Ubicación</span><span style="font-weight:560">{{ hit.ubic }}</span></div>
+<div style="display:flex;justify-content:space-between;padding:11px 14px;font-size:14px;border-bottom:.5px solid rgba(0,0,0,.07)"><span style="color:#6c6c70">Medidas</span><span style="font-weight:560">{{ hit.dims }}</span></div>
+<div style="display:flex;justify-content:space-between;padding:11px 14px;font-size:14px"><span style="color:#6c6c70">Peso</span><span style="font-weight:560">{{ hit.peso }}</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
+<button onClick="{{ hitSalida }}" style-hover="filter:brightness(1.08)" style="appearance:none;border:0;cursor:pointer;min-height:46px;border-radius:14px;font-family:inherit;font-size:16px;font-weight:600;letter-spacing:-0.015em;color:#fff;background:linear-gradient(180deg,#e0472f,#c8321c);box-shadow:0 2px 8px rgba(200,50,28,.3)">Registrar salida</button>
+<button onClick="{{ hitDetalle }}" style-hover="background:rgba(120,120,128,.2)" style="appearance:none;border:0;cursor:pointer;min-height:46px;border-radius:14px;font-family:inherit;font-size:16px;font-weight:560;letter-spacing:-0.015em;color:#c8321c;background:rgba(120,120,128,.13)">Ver ficha completa</button>
+</div>
+</div>
+</sc-if>
+
+<div style="border-radius:20px;background:rgba(255,255,255,.76);box-shadow:0 1px 3px rgba(0,0,0,.08);padding:16px 18px;margin-top:auto">
+<div style="font-size:12px;font-weight:600;color:#8e8e93;letter-spacing:0.02em;margin-bottom:8px">ESCANEOS DE HOY</div>
+<sc-for list="{{ recientes }}" as="r" hint-placeholder-count="3">
+<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:.5px solid rgba(0,0,0,.07);font-size:14px;letter-spacing:-0.015em">
+<span style="font-weight:600">{{ r.id }}</span>
+<span style="color:#48484a">{{ r.accion }}</span>
+<span style="color:#8e8e93;font-variant-numeric:tabular-nums">{{ r.hora }}</span>
+</div>
+</sc-for>
+</div>
+</aside>
+</div>
+</sc-if>
+
+<sc-if value="{{ isEntrada }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;height:100%;min-height:0">
+<div style="flex:1;padding:18px 26px 30px;min-width:0;overflow:auto">
+
+<div style="border-radius:20px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.08);padding:20px;margin-bottom:14px">
+<div style="display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap">
+<div>
+<div style="font-size:12px;font-weight:600;color:#8e8e93;margin-bottom:6px">Número asignado</div>
+<div style="font-size:26px;font-weight:700;letter-spacing:-0.03em;white-space:nowrap">{{ nextId }}</div>
+</div>
+<div style="flex:1;min-width:280px">
+<div style="font-size:12px;font-weight:600;color:#8e8e93;margin-bottom:6px">Tipo de objeto</div>
+<div style="display:flex;gap:4px;padding:3px;border-radius:13px;background:rgba(120,120,128,.12);width:fit-content">
+<sc-for list="{{ tipos }}" as="t" hint-placeholder-count="4">
+<button onClick="{{ t.onClick }}" style="appearance:none;border:0;cursor:pointer;padding:8px 16px;min-height:38px;border-radius:10px;font-family:inherit;font-size:15px;font-weight:{{ t.fw }};letter-spacing:-0.015em;background:{{ t.bg }};color:{{ t.fg }};box-shadow:{{ t.sh }}">{{ t.label }}</button>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+
+<div style="border-radius:20px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;margin-bottom:14px">
+<div style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:.5px solid rgba(0,0,0,.07)">
+<span style="width:132px;flex:none;font-size:15px;color:#48484a;letter-spacing:-0.015em">Descripción</span>
+<input value="{{ fDesc }}" onChange="{{ onDesc }}" placeholder="Guacal reforzado — óleo sobre tela, 2 piezas" style="flex:1;appearance:none;border:0;outline:0;background:transparent;font-family:inherit;font-size:16px;letter-spacing:-0.015em;padding:4px 0">
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:.5px solid rgba(0,0,0,.07)">
+<span style="width:132px;flex:none;font-size:15px;color:#48484a;letter-spacing:-0.015em">Cliente</span>
+<input value="{{ fCliente }}" onChange="{{ onCliente }}" placeholder="Galería, museo o particular" style="flex:1;appearance:none;border:0;outline:0;background:transparent;font-family:inherit;font-size:16px;letter-spacing:-0.015em;padding:4px 0">
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:.5px solid rgba(0,0,0,.07)">
+<span style="width:132px;flex:none;font-size:15px;color:#48484a;letter-spacing:-0.015em">Medidas (cm)</span>
+<div style="flex:1;min-width:0;display:flex;gap:8px">
+<input value="{{ fL }}" onChange="{{ onL }}" placeholder="Largo" style="flex:1;min-width:0;appearance:none;border:0;outline:0;border-radius:11px;background:rgba(120,120,128,.12);font-family:inherit;font-size:16px;padding:9px 12px">
+<input value="{{ fA }}" onChange="{{ onA }}" placeholder="Ancho" style="flex:1;min-width:0;appearance:none;border:0;outline:0;border-radius:11px;background:rgba(120,120,128,.12);font-family:inherit;font-size:16px;padding:9px 12px">
+<input value="{{ fH }}" onChange="{{ onH }}" placeholder="Alto" style="flex:1;min-width:0;appearance:none;border:0;outline:0;border-radius:11px;background:rgba(120,120,128,.12);font-family:inherit;font-size:16px;padding:9px 12px">
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:13px 18px">
+<span style="width:132px;flex:none;font-size:15px;color:#48484a;letter-spacing:-0.015em">Peso (kg)</span>
+<input value="{{ fPeso }}" onChange="{{ onPeso }}" placeholder="0" style="flex:1;appearance:none;border:0;outline:0;background:transparent;font-family:inherit;font-size:16px;padding:4px 0">
+</div>
+</div>
+
+<div style="border-radius:20px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.08);padding:18px;margin-bottom:14px">
+<div style="font-size:12px;font-weight:600;color:#8e8e93;margin-bottom:10px">UBICACIÓN ASIGNADA</div>
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+<div style="display:flex;gap:4px;padding:3px;border-radius:13px;background:rgba(120,120,128,.12)">
+<sc-for list="{{ naves }}" as="n" hint-placeholder-count="3">
+<button onClick="{{ n.onClick }}" style="appearance:none;border:0;cursor:pointer;padding:8px 18px;min-height:38px;border-radius:10px;font-family:inherit;font-size:15px;font-weight:{{ n.fw }};background:{{ n.bg }};color:{{ n.fg }};box-shadow:{{ n.sh }}">{{ n.label }}</button>
+</sc-for>
+</div>
+<input value="{{ fRack }}" onChange="{{ onRack }}" placeholder="Rack" style="width:104px;appearance:none;border:0;outline:0;border-radius:11px;background:rgba(120,120,128,.12);font-family:inherit;font-size:16px;padding:10px 12px">
+<input value="{{ fNivel }}" onChange="{{ onNivel }}" placeholder="Nivel" style="width:104px;appearance:none;border:0;outline:0;border-radius:11px;background:rgba(120,120,128,.12);font-family:inherit;font-size:16px;padding:10px 12px">
+<span style="font-size:13px;color:#8e8e93;letter-spacing:-0.01em">Sugerido: <strong style="color:#48484a">N2 · R09 · B1</strong></span>
+</div>
+</div>
+
+<sc-if value="{{ esGuacal }}" hint-placeholder-val="{{ true }}">
+<div style="border-radius:20px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:.5px solid rgba(0,0,0,.07)">
+<span style="font-size:12px;font-weight:600;color:#8e8e93">CONTENIDO DEL GUACAL</span>
+<button onClick="{{ addPieza }}" style-hover="background:rgba(120,120,128,.2)" style="appearance:none;border:0;cursor:pointer;min-height:34px;padding:0 14px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:560;color:#c8321c;background:rgba(120,120,128,.12)">+ Añadir pieza</button>
+</div>
+<sc-for list="{{ piezas }}" as="p" hint-placeholder-count="2">
+<div style="display:flex;gap:14px;padding:13px 18px;border-bottom:.5px solid rgba(0,0,0,.06);font-size:15px;letter-spacing:-0.015em;align-items:center">
+<span style="font-weight:600;width:56px;flex:none;font-variant-numeric:tabular-nums">{{ p.ref }}</span>
+<span style="flex:1">{{ p.desc }}</span>
+<span style="color:#8e8e93">{{ p.med }}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</div>
+
+<aside style="width:322px;flex:none;padding:18px 22px 18px 0;display:flex;flex-direction:column;gap:14px;overflow:auto">
+<div style="border-radius:20px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.08);padding:16px">
+<div style="font-size:12px;font-weight:600;color:#8e8e93;margin-bottom:10px">FOTO DEL OBJETO</div>
+<div style="height:172px;border-radius:15px;background:rgba(120,120,128,.12);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#8e8e93">
+<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="6" width="18" height="14" rx="3"></rect><path d="M8 6l2-2h4l2 2"></path><circle cx="12" cy="13" r="3.6"></circle></svg>
+<span style="font-size:14px">Tomar foto</span>
+</div>
+</div>
+<div style="border-radius:20px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.08);padding:16px;display:flex;gap:14px;align-items:center">
+<svg width="62" height="62" viewBox="0 0 21 21" shape-rendering="crispEdges" style="flex:none;border-radius:8px;background:#fff"><path fill="#1c1c1e" d="M0 0h7v7H0zM14 0h7v7h-7zM0 14h7v7H0z"></path><path fill="#fff" d="M1 1h5v5H1zM15 1h5v5h-5zM1 15h5v5H1z"></path><path fill="#1c1c1e" d="M2 2h3v3H2zM16 2h3v3h-3zM2 16h3v3H2zM9 0h1v2H9zM11 1h1v3h-1zM9 3h2v1H9zM8 5h2v1H8zM11 5h1v2h-1zM9 7h1v1H9zM0 9h2v1H0zM3 9h3v1H3zM7 9h2v1H7zM10 10h2v1h-2zM13 9h2v1h-2zM16 10h2v1h-2zM19 9h2v1h-2zM9 11h1v2H9zM11 12h2v1h-2zM14 12h1v2h-1zM17 12h2v1h-2zM9 14h2v1H9zM12 15h2v1h-2zM15 15h1v3h-1zM18 15h2v1h-2zM9 17h1v2H9zM11 18h3v1h-3zM17 18h1v2h-1zM19 17h2v1h-2zM12 19h2v1h-2z"></path></svg>
+<div>
+<div style="font-size:17px;font-weight:640;letter-spacing:-0.02em">{{ nextId }}</div>
+<div style="font-size:13px;color:#8e8e93;line-height:1.45">Se imprime al guardar<br>Formato 60 × 40 mm</div>
+</div>
+</div>
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+<button onClick="{{ guardarEntrada }}" style-hover="filter:brightness(1.08)" style="appearance:none;border:0;cursor:pointer;min-height:50px;border-radius:16px;font-family:inherit;font-size:17px;font-weight:600;letter-spacing:-0.02em;color:#fff;background:linear-gradient(180deg,#e0472f,#c8321c);box-shadow:0 3px 10px rgba(200,50,28,.3)">Guardar e imprimir</button>
+<button onClick="{{ goInv }}" style-hover="background:rgba(120,120,128,.2)" style="appearance:none;border:0;cursor:pointer;min-height:46px;border-radius:14px;font-family:inherit;font-size:16px;font-weight:520;color:#48484a;background:rgba(120,120,128,.12)">Cancelar</button>
+</div>
+</aside>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSalida }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;height:100%;min-height:0">
+<div style="width:342px;flex:none;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:0">
+<div style="display:flex;align-items:center;gap:8px;border-radius:14px;background:rgba(120,120,128,.14);padding:0 14px;min-height:44px;flex:none">
+<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+<input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Escanea o escribe el número…" style="flex:1;appearance:none;border:0;outline:0;background:transparent;font-family:inherit;font-size:16px;letter-spacing:-0.015em">
+</div>
+<div style="flex:1;min-height:0;overflow:auto;border-radius:20px;background:rgba(255,255,255,.78);box-shadow:0 1px 3px rgba(0,0,0,.08)">
+<sc-for list="{{ enBodega }}" as="it" hint-placeholder-count="6">
+<button onClick="{{ it.pick }}" style-hover="background:rgba(120,120,128,.1)" style="appearance:none;border:0;cursor:pointer;display:block;width:100%;text-align:left;padding:13px 16px;border-bottom:.5px solid rgba(0,0,0,.06);font-family:inherit;background:{{ it.pickBg }}">
+<div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline"><span style="font-size:16px;font-weight:640;letter-spacing:-0.02em">{{ it.id }}</span><span style="font-size:13px;color:#8e8e93;font-variant-numeric:tabular-nums">{{ it.ubic }}</span></div>
+<div style="font-size:14px;color:#48484a;letter-spacing:-0.015em;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ it.desc }}</div>
+</button>
+</sc-for>
+</div>
+</div>
+
+<div style="flex:1;padding:18px 26px 26px 6px;min-width:0;overflow:auto">
+<sc-if value="{{ salidaVacia }}" hint-placeholder-val="{{ true }}">
+<div style="height:100%;display:flex;align-items:center;justify-content:center;text-align:center;color:#8e8e93;font-size:16px;line-height:1.6;letter-spacing:-0.015em">Escanea el QR del guacal o elige un objeto<br>de la lista para registrar su salida.</div>
+</sc-if>
+<sc-if value="{{ salidaLista }}" hint-placeholder-val="{{ false }}">
+<div>
+<div style="display:flex;align-items:center;gap:12px">
+<div style="font-size:32px;font-weight:700;letter-spacing:-0.035em">{{ out.id }}</div>
+<span style="display:inline-block;padding:4px 11px;border-radius:10px;font-size:13px;font-weight:600;background:{{ out.stBg }};color:{{ out.stFg }}">{{ out.estado }}</span>
+</div>
+<div style="font-size:16px;letter-spacing:-0.015em;color:#48484a;margin:5px 0 16px">{{ out.desc }} · {{ out.cliente }}</div>
+
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+<div style="border-radius:16px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.07);padding:12px 14px"><div style="font-size:12px;color:#8e8e93">Ubicación</div><div style="font-size:16px;font-weight:600;letter-spacing:-0.02em;margin-top:2px">{{ out.ubic }}</div></div>
+<div style="border-radius:16px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.07);padding:12px 14px"><div style="font-size:12px;color:#8e8e93">Entrada</div><div style="font-size:16px;font-weight:600;letter-spacing:-0.02em;margin-top:2px">{{ out.entrada }}</div></div>
+<div style="border-radius:16px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.07);padding:12px 14px"><div style="font-size:12px;color:#8e8e93">Medidas</div><div style="font-size:16px;font-weight:600;letter-spacing:-0.02em;margin-top:2px">{{ out.dims }}</div></div>
+<div style="border-radius:16px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.07);padding:12px 14px"><div style="font-size:12px;color:#8e8e93">Peso</div><div style="font-size:16px;font-weight:600;letter-spacing:-0.02em;margin-top:2px">{{ out.peso }}</div></div>
+</div>
+
+<div style="border-radius:20px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.08);padding:18px;margin-bottom:12px">
+<div style="font-size:12px;font-weight:600;color:#8e8e93;margin-bottom:10px">MOTIVO DE SALIDA</div>
+<div style="display:flex;gap:4px;padding:3px;border-radius:13px;background:rgba(120,120,128,.12);width:fit-content;margin-bottom:16px">
+<sc-for list="{{ motivos }}" as="m" hint-placeholder-count="3">
+<button onClick="{{ m.onClick }}" style="appearance:none;border:0;cursor:pointer;padding:8px 18px;min-height:38px;border-radius:10px;font-family:inherit;font-size:15px;font-weight:{{ m.fw }};background:{{ m.bg }};color:{{ m.fg }};box-shadow:{{ m.sh }}">{{ m.label }}</button>
+</sc-for>
+</div>
+<div style="font-size:12px;font-weight:600;color:#8e8e93;margin-bottom:8px">VINCULAR A MUDANZA</div>
+<div style="border-radius:15px;background:rgba(120,120,128,.1);overflow:hidden">
+<sc-for list="{{ mudOpts }}" as="m" hint-placeholder-count="3">
+<button onClick="{{ m.onClick }}" style="appearance:none;border:0;cursor:pointer;display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-bottom:.5px solid rgba(0,0,0,.06);font-family:inherit;background:{{ m.bg }};color:{{ m.fg }}">
+<span style="width:20px;height:20px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;background:{{ m.dot }};box-shadow:inset 0 0 0 1.5px {{ m.ring }}"><span style="width:7px;height:7px;border-radius:50%;background:{{ m.dotIn }}"></span></span>
+<span style="font-size:15px;font-weight:640;width:88px;flex:none;letter-spacing:-0.02em">{{ m.code }}</span>
+<span style="font-size:15px;flex:1;letter-spacing:-0.015em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ m.label }}</span>
+<span style="font-size:13px;opacity:.7">{{ m.fecha }}</span>
+</button>
+</sc-for>
+</div>
+</div>
+
+<div style="border-radius:20px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.08);padding:18px">
+<div style="font-size:12px;font-weight:600;color:#8e8e93;margin-bottom:10px">QUIÉN RECIBE</div>
+<div style="display:flex;gap:8px;margin-bottom:10px">
+<input value="{{ fRecibe }}" onChange="{{ onRecibe }}" placeholder="Nombre completo de quien recibe" style="flex:1;min-width:0;appearance:none;border:0;outline:0;border-radius:12px;background:rgba(120,120,128,.12);font-family:inherit;font-size:16px;letter-spacing:-0.015em;padding:11px 14px">
+<input value="{{ fDoc }}" onChange="{{ onDoc }}" placeholder="ID / cargo" style="width:150px;appearance:none;border:0;outline:0;border-radius:12px;background:rgba(120,120,128,.12);font-family:inherit;font-size:16px;padding:11px 14px">
+</div>
+<div style="display:flex;gap:10px;align-items:stretch">
+<div style="flex:1;height:66px;border-radius:14px;background:rgba(120,120,128,.1);display:flex;align-items:center;padding:0 14px;font-size:14px;color:#8e8e93">Firmar con el dedo o Apple Pencil</div>
+<div style="width:206px;flex:none;border-radius:14px;background:rgba(120,120,128,.1);padding:11px 14px">
+<div style="font-size:12px;color:#8e8e93">Entrega</div>
+<div style="font-size:15px;font-weight:600;letter-spacing:-0.015em;margin-top:2px">{{ userNombre }}</div>
+</div>
+</div>
+<div style="display:flex;gap:10px;margin-top:16px">
+<button onClick="{{ confirmarSalida }}" style-hover="filter:brightness(1.08)" style="appearance:none;border:0;cursor:pointer;min-height:50px;padding:0 24px;border-radius:16px;font-family:inherit;font-size:17px;font-weight:600;letter-spacing:-0.02em;color:#fff;background:linear-gradient(180deg,#e0472f,#c8321c);box-shadow:0 3px 10px rgba(200,50,28,.3)">Confirmar salida</button>
+<button onClick="{{ verFicha }}" style-hover="background:rgba(120,120,128,.2)" style="appearance:none;border:0;cursor:pointer;min-height:50px;padding:0 22px;border-radius:16px;font-family:inherit;font-size:17px;font-weight:560;letter-spacing:-0.02em;color:#c8321c;background:rgba(120,120,128,.12)">Ver ficha</button>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isDetalle }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;height:100%;min-height:0">
+<div style="flex:1;padding:18px 26px 30px;min-width:0;overflow:auto">
+<button onClick="{{ goInv }}" style-hover="background:rgba(120,120,128,.2)" style="appearance:none;border:0;cursor:pointer;min-height:36px;padding:0 14px;border-radius:12px;font-family:inherit;font-size:15px;font-weight:560;letter-spacing:-0.015em;color:#c8321c;background:rgba(120,120,128,.12);margin-bottom:14px">‹ Inventario</button>
+
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+<div style="border-radius:16px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.07);padding:12px 14px"><div style="font-size:12px;color:#8e8e93">Tipo</div><div style="font-size:16px;font-weight:600;letter-spacing:-0.02em;margin-top:2px">{{ det.tipo }}</div></div>
+<div style="border-radius:16px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.07);padding:12px 14px"><div style="font-size:12px;color:#8e8e93">Cliente</div><div style="font-size:16px;font-weight:600;letter-spacing:-0.02em;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ det.cliente }}</div></div>
+<div style="border-radius:16px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.07);padding:12px 14px"><div style="font-size:12px;color:#8e8e93">Ubicación</div><div style="font-size:16px;font-weight:600;letter-spacing:-0.02em;margin-top:2px">{{ det.ubic }}</div></div>
+<div style="border-radius:16px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.07);padding:12px 14px"><div style="font-size:12px;color:#8e8e93">Estado</div><div style="font-size:16px;font-weight:600;letter-spacing:-0.02em;margin-top:2px">{{ det.estado }}</div></div>
+<div style="border-radius:16px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.07);padding:12px 14px"><div style="font-size:12px;color:#8e8e93">Entrada</div><div style="font-size:16px;font-weight:600;letter-spacing:-0.02em;margin-top:2px">{{ det.entrada }}</div></div>
+<div style="border-radius:16px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.07);padding:12px 14px"><div style="font-size:12px;color:#8e8e93">Salida</div><div style="font-size:16px;font-weight:600;letter-spacing:-0.02em;margin-top:2px">{{ det.salida }}</div></div>
+<div style="border-radius:16px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.07);padding:12px 14px"><div style="font-size:12px;color:#8e8e93">Medidas</div><div style="font-size:16px;font-weight:600;letter-spacing:-0.02em;margin-top:2px">{{ det.dims }}</div></div>
+<div style="border-radius:16px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.07);padding:12px 14px"><div style="font-size:12px;color:#8e8e93">Peso</div><div style="font-size:16px;font-weight:600;letter-spacing:-0.02em;margin-top:2px">{{ det.peso }}</div></div>
+</div>
+
+<div style="border-radius:20px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;margin-bottom:14px">
+<div style="padding:13px 18px;font-size:12px;font-weight:600;color:#8e8e93;border-bottom:.5px solid rgba(0,0,0,.07)">CONTENIDO</div>
+<sc-for list="{{ det.contenido }}" as="c" hint-placeholder-count="3">
+<div style="display:flex;gap:14px;padding:13px 18px;border-bottom:.5px solid rgba(0,0,0,.06);font-size:15px;letter-spacing:-0.015em;align-items:center">
+<span style="font-weight:600;width:56px;flex:none;font-variant-numeric:tabular-nums">{{ c.ref }}</span>
+<span style="flex:1">{{ c.desc }}</span>
+<span style="color:#8e8e93">{{ c.med }}</span>
+</div>
+</sc-for>
+</div>
+
+<div style="border-radius:20px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden">
+<div style="padding:13px 18px;font-size:12px;font-weight:600;color:#8e8e93;border-bottom:.5px solid rgba(0,0,0,.07)">HISTORIAL DE MOVIMIENTOS</div>
+<sc-for list="{{ det.hist }}" as="h" hint-placeholder-count="3">
+<div style="display:flex;gap:14px;padding:13px 18px;border-bottom:.5px solid rgba(0,0,0,.06);font-size:15px;letter-spacing:-0.015em;align-items:center">
+<span style="width:150px;flex:none;color:#8e8e93;font-size:14px;font-variant-numeric:tabular-nums">{{ h.fecha }}</span>
+<span style="width:104px;flex:none;font-weight:600;color:{{ h.color }}">{{ h.evento }}</span>
+<span style="flex:1;color:#48484a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ h.nota }}</span>
+<span style="color:#8e8e93;font-size:14px">{{ h.quien }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+
+<aside style="width:322px;flex:none;padding:18px 22px 18px 0;display:flex;flex-direction:column;gap:14px;overflow:auto">
+<div style="border-radius:20px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.08);padding:16px">
+<div style="font-size:26px;font-weight:700;letter-spacing:-0.03em;margin-bottom:12px">{{ det.id }}</div>
+<div style="height:198px;border-radius:15px;background:rgba(120,120,128,.14);display:flex;align-items:center;justify-content:center;color:#8e8e93;font-size:14px">Foto del objeto</div>
+</div>
+<div style="border-radius:20px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.08);padding:16px;display:flex;gap:14px;align-items:center">
+<svg width="58" height="58" viewBox="0 0 21 21" shape-rendering="crispEdges" style="flex:none;border-radius:8px;background:#fff"><path fill="#1c1c1e" d="M0 0h7v7H0zM14 0h7v7h-7zM0 14h7v7H0z"></path><path fill="#fff" d="M1 1h5v5H1zM15 1h5v5h-5zM1 15h5v5H1z"></path><path fill="#1c1c1e" d="M2 2h3v3H2zM16 2h3v3h-3zM2 16h3v3H2zM9 0h1v2H9zM11 1h1v3h-1zM9 3h2v1H9zM8 5h2v1H8zM11 5h1v2h-1zM9 7h1v1H9zM0 9h2v1H0zM3 9h3v1H3zM7 9h2v1H7zM10 10h2v1h-2zM13 9h2v1h-2zM16 10h2v1h-2zM19 9h2v1h-2zM9 11h1v2H9zM11 12h2v1h-2zM14 12h1v2h-1zM17 12h2v1h-2zM9 14h2v1H9zM12 15h2v1h-2zM15 15h1v3h-1zM18 15h2v1h-2zM9 17h1v2H9zM11 18h3v1h-3zM17 18h1v2h-1zM19 17h2v1h-2zM12 19h2v1h-2z"></path></svg>
+<div style="font-size:13px;color:#8e8e93;line-height:1.45">Código pegado en<br>la cara frontal del guacal</div>
+</div>
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+<button onClick="{{ detSalida }}" style-hover="filter:brightness(1.08)" style="appearance:none;border:0;cursor:pointer;min-height:50px;border-radius:16px;font-family:inherit;font-size:17px;font-weight:600;letter-spacing:-0.02em;color:#fff;background:linear-gradient(180deg,#e0472f,#c8321c);box-shadow:0 3px 10px rgba(200,50,28,.3)">Registrar salida</button>
+<button onClick="{{ goEtiquetas }}" style-hover="background:rgba(120,120,128,.2)" style="appearance:none;border:0;cursor:pointer;min-height:46px;border-radius:14px;font-family:inherit;font-size:16px;font-weight:560;color:#c8321c;background:rgba(120,120,128,.12)">Reimprimir etiqueta</button>
+</div>
+</aside>
+</div>
+</sc-if>
+
+<sc-if value="{{ isMud }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;height:100%;min-height:0">
+<div style="width:320px;flex:none;padding:16px;min-height:0;overflow:auto">
+<div style="border-radius:20px;background:rgba(255,255,255,.78);box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden">
+<sc-for list="{{ mudanzas }}" as="m" hint-placeholder-count="3">
+<button onClick="{{ m.open }}" style-hover="background:rgba(120,120,128,.1)" style="appearance:none;border:0;cursor:pointer;display:block;width:100%;text-align:left;padding:15px 16px;border-bottom:.5px solid rgba(0,0,0,.06);font-family:inherit;background:{{ m.bg }};color:{{ m.fg }}">
+<div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+<span style="font-size:17px;font-weight:680;letter-spacing:-0.025em">{{ m.code }}</span>
+<span style="font-size:13px;opacity:.65;font-variant-numeric:tabular-nums">{{ m.fecha }}</span>
+</div>
+<div style="font-size:15px;letter-spacing:-0.015em;margin-top:3px">{{ m.cliente }}</div>
+<div style="font-size:13px;opacity:.62;margin-top:5px">{{ m.resumen }}</div>
+</button>
+</sc-for>
+</div>
+</div>
+
+<div style="flex:1;padding:18px 26px 26px 6px;min-width:0;overflow:auto">
+<div style="display:flex;align-items:center;gap:12px">
+<div style="font-size:32px;font-weight:700;letter-spacing:-0.035em">{{ mud.code }}</div>
+<span style="display:inline-block;padding:4px 11px;border-radius:10px;font-size:13px;font-weight:600;background:{{ mud.stBg }};color:{{ mud.stFg }}">{{ mud.estado }}</span>
+</div>
+<div style="font-size:16px;color:#48484a;letter-spacing:-0.015em;margin:5px 0 16px">{{ mud.cliente }}</div>
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+<div style="border-radius:16px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.07);padding:12px 14px"><div style="font-size:12px;color:#8e8e93">Fecha</div><div style="font-size:16px;font-weight:600;letter-spacing:-0.02em;margin-top:2px">{{ mud.fecha }}</div></div>
+<div style="border-radius:16px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.07);padding:12px 14px"><div style="font-size:12px;color:#8e8e93">Destino</div><div style="font-size:16px;font-weight:600;letter-spacing:-0.02em;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ mud.destino }}</div></div>
+<div style="border-radius:16px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.07);padding:12px 14px"><div style="font-size:12px;color:#8e8e93">Cuadrilla</div><div style="font-size:16px;font-weight:600;letter-spacing:-0.02em;margin-top:2px">{{ mud.cuadrilla }}</div></div>
+</div>
+
+<div style="border-radius:20px;background:rgba(255,255,255,.8);box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:.5px solid rgba(0,0,0,.07)">
+<span style="font-size:12px;font-weight:600;color:#8e8e93">OBJETOS VINCULADOS</span>
+<button onClick="{{ goScan }}" style-hover="background:rgba(120,120,128,.2)" style="appearance:none;border:0;cursor:pointer;min-height:34px;padding:0 14px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:560;color:#c8321c;background:rgba(120,120,128,.12)">+ Vincular escaneando</button>
+</div>
+<sc-for list="{{ mud.objetos }}" as="o" hint-placeholder-count="4">
+<div style="display:grid;grid-template-columns:104px 1fr 128px 118px;align-items:center;padding:13px 18px;border-bottom:.5px solid rgba(0,0,0,.06);font-size:15px;letter-spacing:-0.015em">
+<span style="font-weight:600;font-variant-numeric:tabular-nums">{{ o.id }}</span>
+<span style="padding-right:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ o.desc }}</span>
+<span style="color:#48484a;font-size:14px;font-variant-numeric:tabular-nums">{{ o.ubic }}</span>
+<span><span style="display:inline-block;padding:3px 10px;border-radius:9px;font-size:12px;font-weight:600;background:{{ o.stBg }};color:{{ o.stFg }}">{{ o.carga }}</span></span>
+</div>
+</sc-for>
+</div>
+<p style="margin:12px 0 0;font-size:13px;color:#8e8e93;letter-spacing:-0.01em">{{ mud.progreso }}</p>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isEtq }}" hint-placeholder-val="{{ false }}">
+<div style="padding:18px 26px 30px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px">
+<div style="display:flex;gap:4px;padding:3px;border-radius:13px;background:rgba(120,120,128,.12)">
+<sc-for list="{{ formatos }}" as="f" hint-placeholder-count="3">
+<button onClick="{{ f.onClick }}" style="appearance:none;border:0;cursor:pointer;padding:8px 16px;min-height:38px;border-radius:10px;font-family:inherit;font-size:15px;font-weight:{{ f.fw }};letter-spacing:-0.015em;white-space:nowrap;background:{{ f.bg }};color:{{ f.fg }};box-shadow:{{ f.sh }}">{{ f.label }}</button>
+</sc-for>
+</div>
+<div style="display:flex;gap:12px;align-items:center">
+<span style="font-size:13px;color:#8e8e93">{{ etqCount }}</span>
+<button onClick="{{ imprimir }}" style-hover="filter:brightness(1.08)" style="appearance:none;border:0;cursor:pointer;min-height:44px;padding:0 20px;border-radius:14px;font-family:inherit;font-size:15px;font-weight:600;letter-spacing:-0.015em;color:#fff;background:linear-gradient(180deg,#e0472f,#c8321c);box-shadow:0 2px 8px rgba(200,50,28,.3);white-space:nowrap">Imprimir selección</button>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+<sc-for list="{{ etiquetas }}" as="e" hint-placeholder-count="8">
+<button onClick="{{ e.toggle }}" style="appearance:none;cursor:pointer;text-align:left;font-family:inherit;padding:14px;display:flex;gap:12px;align-items:flex-start;border-radius:18px;border:1.5px solid {{ e.bd }};background:{{ e.bg }};box-shadow:0 1px 3px rgba(0,0,0,.07)">
+<svg width="52" height="52" viewBox="0 0 21 21" shape-rendering="crispEdges" style="flex:none;border-radius:7px;background:#fff"><path fill="#1c1c1e" d="M0 0h7v7H0zM14 0h7v7h-7zM0 14h7v7H0z"></path><path fill="#fff" d="M1 1h5v5H1zM15 1h5v5h-5zM1 15h5v5H1z"></path><path fill="#1c1c1e" d="M2 2h3v3H2zM16 2h3v3h-3zM2 16h3v3H2zM9 0h1v2H9zM11 1h1v3h-1zM9 3h2v1H9zM8 5h2v1H8zM11 5h1v2h-1zM9 7h1v1H9zM0 9h2v1H0zM3 9h3v1H3zM7 9h2v1H7zM10 10h2v1h-2zM13 9h2v1h-2zM16 10h2v1h-2zM19 9h2v1h-2zM9 11h1v2H9zM11 12h2v1h-2zM14 12h1v2h-1zM17 12h2v1h-2zM9 14h2v1H9zM12 15h2v1h-2zM15 15h1v3h-1zM18 15h2v1h-2zM9 17h1v2H9zM11 18h3v1h-3zM17 18h1v2h-1zM19 17h2v1h-2zM12 19h2v1h-2z"></path></svg>
+<div style="min-width:0">
+<div style="font-size:16px;font-weight:680;letter-spacing:-0.025em">{{ e.id }}</div>
+<div style="font-size:13px;color:#6c6c70;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.cliente }}</div>
+<div style="font-size:14px;font-weight:600;margin-top:6px;font-variant-numeric:tabular-nums">{{ e.ubic }}</div>
+<div style="font-size:12px;color:#8e8e93;margin-top:4px">Ramos · {{ e.entrada }}</div>
+</div>
+</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+</div>
+</div>
+</div>
+
+<sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;left:50%;bottom:26px;transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:14px 22px;border-radius:20px;background:rgba(28,28,30,.82);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);box-shadow:0 10px 30px rgba(0,0,0,.3);animation:ip-toast 2.6s ease forwards">
+<span style="width:9px;height:9px;border-radius:50%;background:#e0472f;flex:none"></span>
+<span style="font-size:15px;font-weight:520;letter-spacing:-0.015em;color:#fff;white-space:nowrap">{{ toast }}</span>
+</div>
+</sc-if>
+
+<div style="position:absolute;left:50%;bottom:7px;transform:translateX(-50%);width:150px;height:5px;border-radius:3px;background:rgba(0,0,0,.28)"></div>
+
+</div>
+</div>
+
+<p style="margin:22px 0 0;font-size:14px;line-height:1.65;color:#48484a;letter-spacing:-0.01em;max-width:740px">Versión iPadOS con materiales translúcidos, esquinas suaves y controles de 44 pt. La versión Modernist queda intacta en <a href="Bodega Ramos.dc.html">Bodega Ramos</a>.</p>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1320,&quot;height&quot;:1040}}">
+const HOY = '31 AGO 2026';
+const USUARIOS = [
+  { nombre: 'Leonardo Escalona', ini: 'LE', rol: 'Personal de bodega', turno: '06:00 – 14:00' },
+  { nombre: 'Marisol Ríos', ini: 'MR', rol: 'Personal de bodega', turno: '14:00 – 22:00' },
+  { nombre: 'Andrés Ramos', ini: 'AR', rol: 'Administrador', turno: 'Sin horario' }
+];
+const ST = {
+  'En bodega': { bg: 'rgba(120,120,128,.16)', fg: '#48484a' },
+  'Fuera': { bg: 'rgba(224,71,47,.14)', fg: '#b52a16' },
+  'En tránsito': { bg: 'rgba(224,71,47,.9)', fg: '#fff' },
+  'Reservado': { bg: 'rgba(28,28,30,.86)', fg: '#fff' }
+};
+const CARGA = {
+  'Cargado': { bg: 'rgba(52,199,89,.18)', fg: '#1c7a37' },
+  'Pendiente': { bg: 'rgba(255,159,10,.2)', fg: '#8a5300' },
+  'Devuelto': { bg: 'rgba(120,120,128,.16)', fg: '#48484a' }
+};
+const ITEMS = [
+  { id: 'RD-1042', tipo: 'Guacal', desc: 'Guacal reforzado — óleo sobre tela, 3 piezas', cliente: 'Galería Mendoza', ubic: 'N2 · R14 · A3', entrada: '12 AGO 2026', salida: '—', dims: '180 × 120 × 60', peso: '145 kg', estado: 'En bodega',
+    contenido: [ { ref: 'P-01', desc: 'Sin título — óleo sobre tela', med: '110 × 80 cm' }, { ref: 'P-02', desc: 'Retrato en gris — óleo sobre tela', med: '90 × 70 cm' }, { ref: 'P-03', desc: 'Estudio de manos — carboncillo', med: '50 × 40 cm' } ],
+    hist: [ { fecha: '12 AGO 2026 · 09:14', evento: 'Entrada', nota: 'Recibido de bodega Norte, sin daños', quien: 'L. Escalona', color: '#1c1c1e' }, { fecha: '12 AGO 2026 · 10:02', evento: 'Ubicado', nota: 'Asignado a N2 · R14 · A3', quien: 'L. Escalona', color: '#6c6c70' }, { fecha: '24 AGO 2026 · 15:40', evento: 'Inspección', nota: 'Revisión mensual de condición', quien: 'M. Ríos', color: '#6c6c70' } ] },
+  { id: 'RD-1043', tipo: 'Pedestal', desc: 'Pedestal MDF blanco 40 × 40 × 110', cliente: 'Museo Bellas Artes', ubic: 'N1 · R04 · B2', entrada: '14 AGO 2026', salida: '—', dims: '40 × 40 × 110', peso: '28 kg', estado: 'En bodega', contenido: [], hist: [ { fecha: '14 AGO 2026 · 11:20', evento: 'Entrada', nota: 'Lote de 6 pedestales, este es el 3/6', quien: 'M. Ríos', color: '#1c1c1e' } ] },
+  { id: 'RD-1047', tipo: 'Obra', desc: 'Escultura en bronce — base incluida', cliente: 'Col. privada Arreola', ubic: 'N2 · R02 · A1', entrada: '18 AGO 2026', salida: '—', dims: '60 × 60 × 175', peso: '210 kg', estado: 'Reservado', contenido: [], hist: [ { fecha: '18 AGO 2026 · 08:05', evento: 'Entrada', nota: 'Traslado desde taller de fundición', quien: 'L. Escalona', color: '#1c1c1e' }, { fecha: '29 AGO 2026 · 12:00', evento: 'Reservado', nota: 'Apartado para MD-204', quien: 'Admin', color: '#b52a16' } ] },
+  { id: 'RD-1051', tipo: 'Guacal', desc: 'Guacal climatizado — 2 acuarelas enmarcadas', cliente: 'Galería Mendoza', ubic: 'N2 · R14 · A4', entrada: '20 AGO 2026', salida: '—', dims: '150 × 20 × 110', peso: '62 kg', estado: 'En bodega',
+    contenido: [ { ref: 'P-01', desc: 'Marina — acuarela enmarcada', med: '70 × 50 cm' }, { ref: 'P-02', desc: 'Puerto al alba — acuarela enmarcada', med: '70 × 50 cm' } ],
+    hist: [ { fecha: '20 AGO 2026 · 16:30', evento: 'Entrada', nota: 'Guacal climatizado, humedad 48%', quien: 'M. Ríos', color: '#1c1c1e' } ] },
+  { id: 'RD-1055', tipo: 'Vitrina', desc: 'Vitrina de cristal templado con base', cliente: 'Museo Bellas Artes', ubic: 'N1 · R07 · A2', entrada: '22 AGO 2026', salida: '—', dims: '120 × 60 × 190', peso: '96 kg', estado: 'En bodega', contenido: [], hist: [ { fecha: '22 AGO 2026 · 09:45', evento: 'Entrada', nota: 'Cristal revisado, sin astillas', quien: 'L. Escalona', color: '#1c1c1e' } ] },
+  { id: 'RD-1060', tipo: 'Guacal', desc: 'Guacal de tránsito — políptico 4 tableros', cliente: 'Fundación Serra', ubic: '—', entrada: '25 AGO 2026', salida: '30 AGO 2026', dims: '220 × 40 × 160', peso: '188 kg', estado: 'Fuera',
+    contenido: [ { ref: 'P-01', desc: 'Tablero I — acrílico sobre madera', med: '100 × 150 cm' }, { ref: 'P-02', desc: 'Tablero II — acrílico sobre madera', med: '100 × 150 cm' }, { ref: 'P-03', desc: 'Tablero III — acrílico sobre madera', med: '100 × 150 cm' }, { ref: 'P-04', desc: 'Tablero IV — acrílico sobre madera', med: '100 × 150 cm' } ],
+    hist: [ { fecha: '25 AGO 2026 · 07:50', evento: 'Entrada', nota: 'Recepción en muelle 2', quien: 'M. Ríos', color: '#1c1c1e' }, { fecha: '30 AGO 2026 · 06:15', evento: 'Salida', nota: 'Cargado en MD-201 — recibe A. Serra (curaduría)', quien: 'L. Escalona', color: '#b52a16' } ] },
+  { id: 'RD-1062', tipo: 'Obra', desc: 'Instalación textil — 3 bultos enrollados', cliente: 'Col. privada Arreola', ubic: 'N3 · R01 · C1', entrada: '27 AGO 2026', salida: '—', dims: '300 × 45 × 45', peso: '54 kg', estado: 'En bodega', contenido: [], hist: [ { fecha: '27 AGO 2026 · 13:10', evento: 'Entrada', nota: 'Bultos enrollados sobre tubo de cartón', quien: 'M. Ríos', color: '#1c1c1e' } ] },
+  { id: 'RD-1066', tipo: 'Pedestal', desc: 'Pedestal metálico negro 50 × 50 × 90', cliente: 'Fundación Serra', ubic: 'N1 · R04 · B3', entrada: '29 AGO 2026', salida: '—', dims: '50 × 50 × 90', peso: '41 kg', estado: 'En bodega', contenido: [], hist: [ { fecha: '29 AGO 2026 · 10:35', evento: 'Entrada', nota: 'Pintura retocada antes de almacenar', quien: 'L. Escalona', color: '#1c1c1e' } ] }
+];
+const MUDANZAS = [
+  { code: 'MD-201', cliente: 'Fundación Serra', fecha: '30 AGO 2026', estado: 'En tránsito', destino: 'Sala 3, Fundación Serra', cuadrilla: '4 personas · camión 7t', resumen: '6 objetos · 2 cargados',
+    objetos: [ { id: 'RD-1060', desc: 'Guacal de tránsito — políptico 4 tableros', ubic: '—', carga: 'Cargado' }, { id: 'RD-1066', desc: 'Pedestal metálico negro', ubic: 'N1 · R04 · B3', carga: 'Cargado' }, { id: 'RD-1055', desc: 'Vitrina de cristal templado', ubic: 'N1 · R07 · A2', carga: 'Pendiente' }, { id: 'RD-1051', desc: 'Guacal climatizado — 2 acuarelas', ubic: 'N2 · R14 · A4', carga: 'Pendiente' } ],
+    progreso: '2 de 4 objetos cargados · último escaneo 06:15' },
+  { code: 'MD-204', cliente: 'Col. privada Arreola', fecha: '03 SEP 2026', estado: 'Reservado', destino: 'Residencia Lomas, planta baja', cuadrilla: '3 personas · camioneta', resumen: '2 objetos · por cargar',
+    objetos: [ { id: 'RD-1047', desc: 'Escultura en bronce — base incluida', ubic: 'N2 · R02 · A1', carga: 'Pendiente' }, { id: 'RD-1062', desc: 'Instalación textil — 3 bultos', ubic: 'N3 · R01 · C1', carga: 'Pendiente' } ],
+    progreso: '0 de 2 objetos cargados · salida programada 07:00' },
+  { code: 'MD-198', cliente: 'Museo Bellas Artes', fecha: '21 AGO 2026', estado: 'Fuera', destino: 'Bodega Norte', cuadrilla: '5 personas · camión 12t', resumen: '9 objetos · cerrada',
+    objetos: [ { id: 'RD-1043', desc: 'Pedestal MDF blanco', ubic: 'N1 · R04 · B2', carga: 'Devuelto' }, { id: 'RD-1055', desc: 'Vitrina de cristal templado', ubic: 'N1 · R07 · A2', carga: 'Devuelto' } ],
+    progreso: 'Mudanza cerrada el 21 AGO 2026 · acta firmada' }
+];
+
+const ICONS = {
+  scan: 'M3 8V5.6A2.6 2.6 0 015.6 3H8;M21 8V5.6A2.6 2.6 0 0018.4 3H16;M3 16v2.4A2.6 2.6 0 005.6 21H8;M21 16v2.4A2.6 2.6 0 0118.4 21H16;M3 12h18',
+  inv: 'M4 4h6.5v6.5H4zM13.5 4H20v6.5h-6.5zM4 13.5h6.5V20H4zM13.5 13.5H20V20h-6.5z',
+  entrada: 'M12 3v12;M6.5 10.5L12 16l5.5-5.5;M4 21h16',
+  salida: 'M12 21V9;M6.5 13.5L12 8l5.5 5.5;M4 3h16',
+  mud: 'M2.5 7.5A1.5 1.5 0 014 6h8v10H2.5zM12 10h4.5l4 4v2H12;M6.5 19a2 2 0 100-4 2 2 0 000 4;M17 19a2 2 0 100-4 2 2 0 000 4',
+  etq: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14.5 14.5h3v3h-3;M20 14.5v3;M14.5 20H20'
+};
+
+class Component extends DCLogic {
+  state = {
+    user: USUARIOS[0], screen: 'inv', query: '', filtro: 'Todos', selId: 'RD-1042', items: ITEMS,
+    scanned: null, outId: null, motivo: 'Mudanza', mudLink: 'MD-201', recibe: '', doc: '',
+    mudSel: 'MD-201', tipo: 'Guacal', desc: '', cliente: '', L: '', A: '', H: '', peso: '',
+    nave: 'N2', rack: '', nivel: '', piezas: [{ ref: 'P-01', desc: 'Sin describir', med: '— × — cm' }],
+    etqSel: ['RD-1042', 'RD-1051', 'RD-1066'], formato: '60 × 40 mm', toast: ''
+  };
+
+  go = (screen) => this.setState({ screen });
+  flash = (toast) => { this.setState({ toast }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: '' }), 2600); };
+  seg = (on) => on ? { bg: '#fff', fg: '#1c1c1e', fw: '600', sh: '0 1px 3px rgba(0,0,0,.16)' } : { bg: 'transparent', fg: '#48484a', fw: '500', sh: 'none' };
+  st = (estado) => ST[estado] || ST['En bodega'];
+  userName = () => this.state.user.nombre;
+  nextId = () => 'RD-' + (1066 + this.state.items.length - 7);
+
+  icon = (key) => React.createElement('svg', { width: 21, height: 21, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' },
+    ICONS[key].split(';').map((d, i) => React.createElement('path', { key: i, d })));
+
+  guardar = () => {
+    const s = this.state, id = this.nextId();
+    const it = { id, tipo: s.tipo, desc: s.desc || (s.tipo + ' sin describir'), cliente: s.cliente || 'Sin asignar',
+      ubic: s.nave + ' · ' + (s.rack || 'R09') + ' · ' + (s.nivel || 'B1'), entrada: HOY, salida: '—',
+      dims: (s.L || '—') + ' × ' + (s.A || '—') + ' × ' + (s.H || '—'), peso: (s.peso || '—') + ' kg', estado: 'En bodega',
+      contenido: s.tipo === 'Guacal' ? s.piezas : [],
+      hist: [{ fecha: HOY + ' · ahora', evento: 'Entrada', nota: 'Registrado desde el iPad de muelle', quien: this.userName(), color: '#1c1c1e' }] };
+    this.setState({ items: [it, ...s.items], selId: id, screen: 'detalle', desc: '', cliente: '', L: '', A: '', H: '', peso: '', rack: '', nivel: '' });
+    this.flash(id + ' registrado · etiqueta enviada a la impresora');
+  };
+
+  confirmar = () => {
+    const s = this.state;
+    if (!s.recibe.trim()) { this.flash('Falta el nombre de quien recibe'); return; }
+    const quienRecibe = s.recibe.trim() + (s.doc.trim() ? ' (' + s.doc.trim() + ')' : '');
+    const nota = s.motivo + ' · ' + s.mudLink + ' · recibe ' + quienRecibe;
+    const items = s.items.map(i => i.id === s.outId ? Object.assign({}, i, { estado: 'Fuera', salida: HOY, ubic: '—',
+      hist: [{ fecha: HOY + ' · ahora', evento: 'Salida', nota, quien: this.userName(), color: '#b52a16' }].concat(i.hist) }) : i);
+    this.setState({ items, selId: s.outId, outId: null, recibe: '', doc: '', screen: 'detalle' });
+    this.flash(s.outId + ' entregado a ' + quienRecibe);
+  };
+
+  renderVals() {
+    const s = this.state, items = s.items, u = s.user;
+    const q = s.query.trim().toLowerCase();
+    const match = (i) => (!q || (i.id + ' ' + i.desc + ' ' + i.cliente + ' ' + i.ubic + ' ' + i.tipo).toLowerCase().includes(q)) && (s.filtro === 'Todos' || (s.filtro === 'En bodega' ? i.estado !== 'Fuera' : s.filtro === 'Fuera' ? i.estado === 'Fuera' : i.tipo === s.filtro));
+    const deco = (i) => Object.assign({}, i, { stBg: this.st(i.estado).bg, stFg: this.st(i.estado).fg });
+    const rows = items.filter(match).map(i => Object.assign(deco(i), { open: () => this.setState({ selId: i.id, screen: 'detalle' }) }));
+    const det = deco(items.find(i => i.id === s.selId) || items[0]);
+    const hit = s.scanned ? deco(items.find(i => i.id === s.scanned) || items[0]) : null;
+    const out = s.outId ? deco(items.find(i => i.id === s.outId) || items[0]) : null;
+    const mudRaw = MUDANZAS.find(m => m.code === s.mudSel) || MUDANZAS[0];
+    const titles = { inv: ['Base de datos', 'Inventario'], scan: ['Lectura de código', 'Escáner QR'], entrada: ['Alta de registro', 'Registrar entrada'], salida: ['Baja temporal', 'Registrar salida'], detalle: [det.tipo + ' · ' + det.cliente, det.id], mud: ['Logística', 'Mudanzas'], etq: ['Impresión', 'Etiquetas QR'] };
+    const t = titles[s.screen] || titles.inv;
+    const chip = (label, cur, set) => Object.assign({ label, onClick: set }, this.seg(cur === label));
+    const navDef = [
+      { key: 'scan', label: 'Escáner', badge: '' },
+      { key: 'inv', label: 'Inventario', badge: String(items.length) },
+      { key: 'entrada', label: 'Entrada', badge: '' },
+      { key: 'salida', label: 'Salida', badge: '' },
+      { key: 'mud', label: 'Mudanzas', badge: '2' },
+      { key: 'etq', label: 'Etiquetas', badge: '' }
+    ];
+
+    return {
+      navItems: navDef.map(n => { const on = s.screen === n.key || (n.key === 'inv' && s.screen === 'detalle'); return {
+        label: n.label, icon: this.icon(n.key), go: () => this.go(n.key),
+        bg: on ? 'rgba(255,255,255,.92)' : 'transparent', fg: on ? '#1c1c1e' : '#3a3a3c', fw: on ? '600' : '500',
+        sh: on ? '0 1px 3px rgba(0,0,0,.1)' : 'none', ic: on ? '#c8321c' : '#6c6c70',
+        badge: n.badge, badgeBg: on ? 'rgba(224,71,47,.14)' : 'rgba(120,120,128,.16)', badgeFg: on ? '#b52a16' : '#6c6c70' }; }),
+      userIni: u.ini, userNombre: u.nombre, userRol: u.rol,
+      kicker: t[0], title: t[1],
+      countIn: items.filter(i => i.estado !== 'Fuera').length, countOut: items.filter(i => i.estado === 'Fuera').length,
+      isInv: s.screen === 'inv', isScan: s.screen === 'scan', isEntrada: s.screen === 'entrada', isSalida: s.screen === 'salida', isDetalle: s.screen === 'detalle', isMud: s.screen === 'mud', isEtq: s.screen === 'etq',
+      goScan: () => this.go('scan'), goInv: () => this.go('inv'), goEntrada: () => this.go('entrada'), goEtiquetas: () => this.go('etq'),
+      toast: s.toast,
+
+      query: s.query, onQuery: (e) => this.setState({ query: e.target.value }),
+      filters: ['Todos', 'En bodega', 'Fuera', 'Guacal', 'Obra', 'Pedestal'].map(l => chip(l, s.filtro, () => this.setState({ filtro: l }))),
+      rows, resultLine: rows.length + ' de ' + items.length + ' registros · sincronizado ' + HOY,
+
+      scanEmpty: !s.scanned, scanHit: !!s.scanned, hit: hit || {},
+      doScan: () => { const pool = items.filter(i => i.estado !== 'Fuera'); const pick = pool[Math.floor(Math.random() * pool.length)]; this.setState({ scanned: pick.id }); this.flash(pick.id + ' leído correctamente'); },
+      hitSalida: () => this.setState({ outId: s.scanned, screen: 'salida' }),
+      hitDetalle: () => this.setState({ selId: s.scanned, screen: 'detalle' }),
+      recientes: [{ id: 'RD-1060', accion: 'Salida', hora: '06:15' }, { id: 'RD-1066', accion: 'Entrada', hora: '10:35' }, { id: 'RD-1042', accion: 'Consulta', hora: '11:48' }],
+
+      nextId: this.nextId(),
+      tipos: ['Guacal', 'Obra', 'Pedestal', 'Vitrina'].map(l => chip(l, s.tipo, () => this.setState({ tipo: l }))),
+      naves: ['N1', 'N2', 'N3'].map(l => chip(l, s.nave, () => this.setState({ nave: l }))),
+      esGuacal: s.tipo === 'Guacal', piezas: s.piezas,
+      addPieza: () => this.setState({ piezas: s.piezas.concat([{ ref: 'P-0' + (s.piezas.length + 1), desc: 'Sin describir', med: '— × — cm' }]) }),
+      fDesc: s.desc, onDesc: (e) => this.setState({ desc: e.target.value }),
+      fCliente: s.cliente, onCliente: (e) => this.setState({ cliente: e.target.value }),
+      fL: s.L, onL: (e) => this.setState({ L: e.target.value }),
+      fA: s.A, onA: (e) => this.setState({ A: e.target.value }),
+      fH: s.H, onH: (e) => this.setState({ H: e.target.value }),
+      fPeso: s.peso, onPeso: (e) => this.setState({ peso: e.target.value }),
+      fRack: s.rack, onRack: (e) => this.setState({ rack: e.target.value }),
+      fNivel: s.nivel, onNivel: (e) => this.setState({ nivel: e.target.value }),
+      guardarEntrada: this.guardar,
+
+      salidaVacia: !s.outId, salidaLista: !!s.outId, out: out || {},
+      enBodega: items.filter(i => i.estado !== 'Fuera').filter(match).map(i => Object.assign(deco(i), { pick: () => this.setState({ outId: i.id }), pickBg: s.outId === i.id ? 'rgba(224,71,47,.1)' : 'transparent' })),
+      motivos: ['Mudanza', 'Devolución', 'Exhibición'].map(l => chip(l, s.motivo, () => this.setState({ motivo: l }))),
+      mudOpts: MUDANZAS.map(m => { const on = s.mudLink === m.code; return { code: m.code, label: m.cliente + ' · ' + m.destino, fecha: m.fecha, onClick: () => this.setState({ mudLink: m.code }),
+        bg: on ? 'rgba(224,71,47,.1)' : 'transparent', fg: '#1c1c1e', dot: on ? '#c8321c' : 'transparent', ring: on ? '#c8321c' : 'rgba(120,120,128,.5)', dotIn: on ? '#fff' : 'transparent' }; }),
+      fRecibe: s.recibe, onRecibe: (e) => this.setState({ recibe: e.target.value }),
+      fDoc: s.doc, onDoc: (e) => this.setState({ doc: e.target.value }),
+      confirmarSalida: this.confirmar,
+      verFicha: () => this.setState({ selId: s.outId, screen: 'detalle' }),
+
+      det, detSalida: () => this.setState({ outId: det.id, screen: 'salida' }),
+
+      mudanzas: MUDANZAS.map(m => { const on = s.mudSel === m.code; return Object.assign({}, m, { open: () => this.setState({ mudSel: m.code }), bg: on ? 'rgba(224,71,47,.1)' : 'transparent', fg: '#1c1c1e' }); }),
+      mud: Object.assign({}, mudRaw, { stBg: this.st(mudRaw.estado).bg, stFg: this.st(mudRaw.estado).fg, objetos: mudRaw.objetos.map(o => Object.assign({}, o, { stBg: CARGA[o.carga].bg, stFg: CARGA[o.carga].fg })) }),
+
+      formatos: ['60 × 40 mm', '100 × 70 mm', 'A4 · 12 por hoja'].map(l => chip(l, s.formato, () => this.setState({ formato: l }))),
+      etiquetas: items.map(i => { const on = s.etqSel.includes(i.id); return Object.assign({}, i, { bd: on ? '#e0472f' : 'rgba(0,0,0,.06)', bg: on ? 'rgba(224,71,47,.08)' : 'rgba(255,255,255,.82)', toggle: () => this.setState({ etqSel: on ? s.etqSel.filter(x => x !== i.id) : s.etqSel.concat([i.id]) }) }); }),
+      etqCount: s.etqSel.length + ' seleccionadas · ' + s.formato,
+      imprimir: () => this.flash(s.etqSel.length + ' etiquetas enviadas a la impresora de muelle')
+    };
+  }
+}
+</script>
+</body>
+</html>
