@@ -1,0 +1,27 @@
+/*
+  Estados de interacción documentados en el README, sección "Interacciones y comportamiento".
+  Van en una hoja aparte porque :hover no se puede expresar con estilos inline.
+*/
+
+.nav-item {
+  background: transparent;
+}
+.nav-item:hover {
+  background: rgba(120, 120, 128, .12);
+}
+
+.primary-button:hover {
+  filter: brightness(1.08);
+}
+
+@keyframes toast-in-out {
+  0% { opacity: 0; transform: translateY(14px) scale(.97); }
+  14% { opacity: 1; transform: none; }
+  86% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(8px) scale(.99); }
+}
+
+@keyframes scan-sweep {
+  0% { top: 6%; }
+  100% { top: 90%; }
+}

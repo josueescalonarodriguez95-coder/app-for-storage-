@@ -23,9 +23,27 @@ export async function seedIfEmpty(): Promise<void> {
   ])
 }
 
+/** Todos los registros, incluidas las piezas de guacal (contenedorId != null). */
 export async function listObjetos() {
   const db = await getDB()
   return db.getAll('objetos')
+}
+
+/**
+ * Sólo los registros de primer nivel (guacales, obras sueltas, pedestales, vitrinas).
+ * Es la lista que se ve en Inventario, en los contadores de la cabecera y en el badge del menú:
+ * las piezas de un guacal no son un registro independiente en esas vistas.
+ */
+export async function listObjetosPrincipales() {
+  const objetos = await listObjetos()
+  return objetos.filter((o) => o.contenedorId === null)
+}
+
+/** Piezas contenidas en un guacal, en el orden de su referencia (P-01, P-02...). */
+export async function listPiezas(contenedorId: string) {
+  const db = await getDB()
+  const piezas = await db.getAllFromIndex('objetos', 'contenedorId', contenedorId)
+  return piezas.sort((a, b) => (a.ref ?? '').localeCompare(b.ref ?? ''))
 }
 
 export async function listClientes() {

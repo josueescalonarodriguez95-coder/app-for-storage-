@@ -14,9 +14,9 @@ export const CLIENTES: Cliente[] = [
 ]
 
 export const USUARIOS: Usuario[] = [
-  { id: 'usr-le', nombre: 'Leonardo Escalona', iniciales: 'LE', rol: 'bodega', turno: '06:00 – 14:00' },
-  { id: 'usr-mr', nombre: 'Marisol Ríos', iniciales: 'MR', rol: 'bodega', turno: '14:00 – 22:00' },
-  { id: 'usr-ar', nombre: 'Andrés Ramos', iniciales: 'AR', rol: 'admin', turno: 'Sin horario' },
+  { id: 'usr-1-le', nombre: 'Leonardo Escalona', iniciales: 'LE', rol: 'bodega', turno: '06:00 – 14:00' },
+  { id: 'usr-2-mr', nombre: 'Marisol Ríos', iniciales: 'MR', rol: 'bodega', turno: '14:00 – 22:00' },
+  { id: 'usr-3-ar', nombre: 'Andrés Ramos', iniciales: 'AR', rol: 'admin', turno: 'Sin horario' },
 ]
 
 interface PiezaSeed {
@@ -58,9 +58,9 @@ const OBJETOS_SEED: ObjetoSeed[] = [
       { ref: 'P-03', desc: 'Estudio de manos — carboncillo', largo: 50, ancho: 40 },
     ],
     hist: [
-      { fechaHora: '2026-08-12T09:14', evento: 'Entrada', nota: 'Recibido de bodega Norte, sin daños', usuarioId: 'usr-le' },
-      { fechaHora: '2026-08-12T10:02', evento: 'Ubicado', nota: 'Asignado a N2 · R14 · A3', usuarioId: 'usr-le' },
-      { fechaHora: '2026-08-24T15:40', evento: 'Inspección', nota: 'Revisión mensual de condición', usuarioId: 'usr-mr' },
+      { fechaHora: '2026-08-12T09:14', evento: 'Entrada', nota: 'Recibido de bodega Norte, sin daños', usuarioId: 'usr-1-le' },
+      { fechaHora: '2026-08-12T10:02', evento: 'Ubicado', nota: 'Asignado a N2 · R14 · A3', usuarioId: 'usr-1-le' },
+      { fechaHora: '2026-08-24T15:40', evento: 'Inspección', nota: 'Revisión mensual de condición', usuarioId: 'usr-2-mr' },
     ],
   },
   {
@@ -68,7 +68,7 @@ const OBJETOS_SEED: ObjetoSeed[] = [
     clienteId: 'cli-bellas-artes', ubic: ['N1', 'R04', 'B2'], entrada: '2026-08-14', salida: null,
     dims: [40, 40, 110], pesoKg: 28, estado: 'En bodega',
     hist: [
-      { fechaHora: '2026-08-14T11:20', evento: 'Entrada', nota: 'Lote de 6 pedestales, este es el 3/6', usuarioId: 'usr-mr' },
+      { fechaHora: '2026-08-14T11:20', evento: 'Entrada', nota: 'Lote de 6 pedestales, este es el 3/6', usuarioId: 'usr-2-mr' },
     ],
   },
   {
@@ -76,8 +76,8 @@ const OBJETOS_SEED: ObjetoSeed[] = [
     clienteId: 'cli-arreola', ubic: ['N2', 'R02', 'A1'], entrada: '2026-08-18', salida: null,
     dims: [60, 60, 175], pesoKg: 210, estado: 'Reservado',
     hist: [
-      { fechaHora: '2026-08-18T08:05', evento: 'Entrada', nota: 'Traslado desde taller de fundición', usuarioId: 'usr-le' },
-      { fechaHora: '2026-08-29T12:00', evento: 'Reservado', nota: 'Apartado para MD-204', usuarioId: 'usr-ar', mudanzaId: 'MD-204' },
+      { fechaHora: '2026-08-18T08:05', evento: 'Entrada', nota: 'Traslado desde taller de fundición', usuarioId: 'usr-1-le' },
+      { fechaHora: '2026-08-29T12:00', evento: 'Reservado', nota: 'Apartado para MD-204', usuarioId: 'usr-3-ar', mudanzaId: 'MD-204' },
     ],
   },
   {
@@ -89,7 +89,7 @@ const OBJETOS_SEED: ObjetoSeed[] = [
       { ref: 'P-02', desc: 'Puerto al alba — acuarela enmarcada', largo: 70, ancho: 50 },
     ],
     hist: [
-      { fechaHora: '2026-08-20T16:30', evento: 'Entrada', nota: 'Guacal climatizado, humedad 48%', usuarioId: 'usr-mr' },
+      { fechaHora: '2026-08-20T16:30', evento: 'Entrada', nota: 'Guacal climatizado, humedad 48%', usuarioId: 'usr-2-mr' },
     ],
   },
   {
@@ -97,7 +97,7 @@ const OBJETOS_SEED: ObjetoSeed[] = [
     clienteId: 'cli-bellas-artes', ubic: ['N1', 'R07', 'A2'], entrada: '2026-08-22', salida: null,
     dims: [120, 60, 190], pesoKg: 96, estado: 'En bodega',
     hist: [
-      { fechaHora: '2026-08-22T09:45', evento: 'Entrada', nota: 'Cristal revisado, sin astillas', usuarioId: 'usr-le' },
+      { fechaHora: '2026-08-22T09:45', evento: 'Entrada', nota: 'Cristal revisado, sin astillas', usuarioId: 'usr-1-le' },
     ],
   },
   {
@@ -111,8 +111,8 @@ const OBJETOS_SEED: ObjetoSeed[] = [
       { ref: 'P-04', desc: 'Tablero IV — acrílico sobre madera', largo: 100, ancho: 150 },
     ],
     hist: [
-      { fechaHora: '2026-08-25T07:50', evento: 'Entrada', nota: 'Recepción en muelle 2', usuarioId: 'usr-mr' },
-      { fechaHora: '2026-08-30T06:15', evento: 'Salida', nota: 'Cargado en MD-201 — recibe A. Serra (curaduría)', usuarioId: 'usr-le', mudanzaId: 'MD-201' },
+      { fechaHora: '2026-08-25T07:50', evento: 'Entrada', nota: 'Recepción en muelle 2', usuarioId: 'usr-2-mr' },
+      { fechaHora: '2026-08-30T06:15', evento: 'Salida', nota: 'Cargado en MD-201 — recibe A. Serra (curaduría)', usuarioId: 'usr-1-le', mudanzaId: 'MD-201' },
     ],
   },
   {
@@ -120,7 +120,7 @@ const OBJETOS_SEED: ObjetoSeed[] = [
     clienteId: 'cli-arreola', ubic: ['N3', 'R01', 'C1'], entrada: '2026-08-27', salida: null,
     dims: [300, 45, 45], pesoKg: 54, estado: 'En bodega',
     hist: [
-      { fechaHora: '2026-08-27T13:10', evento: 'Entrada', nota: 'Bultos enrollados sobre tubo de cartón', usuarioId: 'usr-mr' },
+      { fechaHora: '2026-08-27T13:10', evento: 'Entrada', nota: 'Bultos enrollados sobre tubo de cartón', usuarioId: 'usr-2-mr' },
     ],
   },
   {
@@ -128,7 +128,7 @@ const OBJETOS_SEED: ObjetoSeed[] = [
     clienteId: 'cli-serra', ubic: ['N1', 'R04', 'B3'], entrada: '2026-08-29', salida: null,
     dims: [50, 50, 90], pesoKg: 41, estado: 'En bodega',
     hist: [
-      { fechaHora: '2026-08-29T10:35', evento: 'Entrada', nota: 'Pintura retocada antes de almacenar', usuarioId: 'usr-le' },
+      { fechaHora: '2026-08-29T10:35', evento: 'Entrada', nota: 'Pintura retocada antes de almacenar', usuarioId: 'usr-1-le' },
     ],
   },
 ]
