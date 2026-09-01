@@ -1,4 +1,5 @@
-import { getDB } from './db'
+import { supabase } from './supabaseClient'
+import { movimientoAFila, objetoAFila } from './mappers'
 import { listClientes, listObjetosPrincipales } from './repo'
 import type { Cliente, MotivoSalida, Movimiento, Objeto, TipoCliente } from './schema'
 
@@ -36,8 +37,8 @@ export async function resolverCliente(nombreLibre: string): Promise<string> {
     tipo: inferirTipoCliente(nombre),
     contacto: '',
   }
-  const db = await getDB()
-  await db.put('clientes', cliente)
+  const { error } = await supabase.from('clientes').insert(cliente)
+  if (error) throw error
   return cliente.id
 }
 
@@ -59,9 +60,10 @@ export interface NuevaEntrada {
 }
 
 /**
- * Crea el registro y su primera entrada de historial en una sola transacción —
- * README, "Registrar entrada": estado «En bodega», ubicación y medidas concatenadas,
- * historial firmado por el usuario en turno, y el contenido si es guacal.
+ * Crea el registro y su primera entrada de historial en una sola transacción (RPC
+ * crear_objeto_con_entrada, ver supabase/schema.sql) — README, "Registrar entrada": estado
+ * «En bodega», ubicación y medidas concatenadas, historial firmado por el usuario en turno, y
+ * el contenido si es guacal.
  */
 export async function crearObjetoConEntrada(datos: NuevaEntrada): Promise<void> {
   const ahora = new Date().toISOString()
@@ -114,14 +116,12 @@ export async function crearObjetoConEntrada(datos: NuevaEntrada): Promise<void> 
     mudanzaId: null,
   }
 
-  const db = await getDB()
-  const tx = db.transaction(['objetos', 'movimientos'], 'readwrite')
-  await Promise.all([
-    tx.objectStore('objetos').put(objeto),
-    ...piezas.map((p) => tx.objectStore('objetos').put(p)),
-    tx.objectStore('movimientos').put(movimiento),
-    tx.done,
-  ])
+  const { error } = await supabase.rpc('crear_objeto_con_entrada', {
+    p_objeto: objetoAFila(objeto),
+    p_piezas: piezas.map(objetoAFila),
+    p_movimiento: movimientoAFila(movimiento),
+  })
+  if (error) throw error
 }
 
 export interface DatosSalida {
@@ -135,14 +135,19 @@ export interface DatosSalida {
 }
 
 /**
- * Confirma la salida — README, "Registrar salida": el objeto pasa a «Fuera», se le pone fecha
- * de salida, se le borra la ubicación, y se añade al historial una entrada «Salida» con nota
+ * Confirma la salida en una sola transacción (RPC confirmar_salida) — README, "Registrar
+ * salida": el objeto pasa a «Fuera», se le pone fecha de salida, se le borra la ubicación, y
+ * se añade al historial una entrada «Salida» con nota
  * `motivo · código de mudanza · recibe <nombre> (<id>)`, firmada por el usuario en turno.
  */
 export async function confirmarSalida(datos: DatosSalida): Promise<void> {
-  const db = await getDB()
-  const objeto = await db.get('objetos', datos.objetoId)
-  if (!objeto) throw new Error(`Objeto ${datos.objetoId} no encontrado`)
+  const { data: existe, error: errGet } = await supabase
+    .from('objetos')
+    .select('id')
+    .eq('id', datos.objetoId)
+    .maybeSingle()
+  if (errGet) throw errGet
+  if (!existe) throw new Error(`Objeto ${datos.objetoId} no encontrado`)
 
   const ahora = new Date().toISOString()
   const quienRecibe = datos.recibeNombre.trim() + (datos.recibeDoc.trim() ? ` (${datos.recibeDoc.trim()})` : '')
@@ -160,39 +165,27 @@ export async function confirmarSalida(datos: DatosSalida): Promise<void> {
     mudanzaId: datos.mudLink,
   }
 
-  const tx = db.transaction(['objetos', 'movimientos'], 'readwrite')
-  await Promise.all([
-    tx.objectStore('objetos').put({ ...objeto, estado: 'Fuera', fechaSalida: ahora, ubicacion: null }),
-    tx.objectStore('movimientos').put(movimiento),
-    tx.done,
-  ])
+  const { error } = await supabase.rpc('confirmar_salida', {
+    p_objeto_id: datos.objetoId,
+    p_fecha_salida: ahora,
+    p_movimiento: movimientoAFila(movimiento),
+  })
+  if (error) throw error
 }
 
 /**
  * Borra un registro por error (guacal, obra suelta, pedestal o vitrina) junto con sus piezas,
- * su historial y sus vínculos a mudanzas. No está en el diseño original —el README pide que el
- * historial sea append-only— pero hace falta para poder limpiar una alta hecha por equivocación.
+ * su historial y sus vínculos a mudanzas, en una sola transacción (RPC
+ * eliminar_objeto_cascada). No está en el diseño original —el README pide que el historial sea
+ * append-only— pero hace falta para poder limpiar una alta hecha por equivocación.
  */
 export async function eliminarObjeto(id: string): Promise<void> {
-  const db = await getDB()
-  const [piezas, movimientos, vinculos] = await Promise.all([
-    db.getAllFromIndex('objetos', 'contenedorId', id),
-    db.getAllFromIndex('movimientos', 'objetoId', id),
-    db.getAllFromIndex('mudanzaObjetos', 'objetoId', id),
-  ])
-
-  const tx = db.transaction(['objetos', 'movimientos', 'mudanzaObjetos'], 'readwrite')
-  await Promise.all([
-    tx.objectStore('objetos').delete(id),
-    ...piezas.map((p) => tx.objectStore('objetos').delete(p.id)),
-    ...movimientos.map((m) => tx.objectStore('movimientos').delete(m.id)),
-    ...vinculos.map((v) => tx.objectStore('mudanzaObjetos').delete([v.mudanzaId, v.objetoId])),
-    tx.done,
-  ])
+  const { error } = await supabase.rpc('eliminar_objeto_cascada', { p_id: id })
+  if (error) throw error
 }
 
 /** Quita el vínculo entre un objeto y una mudanza (no borra el objeto ni la mudanza). */
 export async function desvincularDeMudanza(mudanzaId: string, objetoId: string): Promise<void> {
-  const db = await getDB()
-  await db.delete('mudanzaObjetos', [mudanzaId, objetoId])
+  const { error } = await supabase.from('mudanza_objetos').delete().eq('mudanza_id', mudanzaId).eq('objeto_id', objetoId)
+  if (error) throw error
 }

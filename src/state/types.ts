@@ -54,6 +54,8 @@ export interface AppState {
   formato: FormatoEtiqueta
   toast: string
   cargando: boolean
+  /** Si la carga inicial contra Supabase falla (sin red, variables mal puestas, etc.). */
+  errorCarga: string | null
 }
 
 
@@ -94,4 +96,5 @@ export const ESTADO_INICIAL: AppState = {
   formato: '60 × 40 mm',
   toast: '',
   cargando: true,
+  errorCarga: null,
 }

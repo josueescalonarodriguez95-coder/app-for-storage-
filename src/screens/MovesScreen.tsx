@@ -46,9 +46,13 @@ export function MovesScreen() {
 
   const quitar = async (objetoId: string) => {
     if (!mud) return
-    await desvincularDeMudanza(mud.codigo, objetoId)
-    await cargarVinculos()
-    flash(`${objetoId} desvinculado de ${mud.codigo}`)
+    try {
+      await desvincularDeMudanza(mud.codigo, objetoId)
+      await cargarVinculos()
+      flash(`${objetoId} desvinculado de ${mud.codigo}`)
+    } catch {
+      flash('No se pudo desvincular — revisá la conexión e intentá de nuevo')
+    }
   }
 
   if (!mud) {

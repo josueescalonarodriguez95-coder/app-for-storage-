@@ -4,7 +4,7 @@ import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { crearObjetoConEntrada, nextObjetoId, resolverCliente } from '../db/mutations'
 import type { TipoObjeto } from '../db/schema'
 import { useAppState } from '../state/AppStateContext'
-import { fileToResizedDataUrl } from '../utils/imagen'
+import { subirFoto } from '../utils/imagen'
 
 const TIPOS: TipoObjeto[] = ['Guacal', 'Obra', 'Pedestal', 'Vitrina']
 const NAVES = ['N1', 'N2', 'N3']
@@ -95,6 +95,7 @@ export function CheckInScreen() {
   const { state, dispatch, flash, refrescarItems } = useAppState()
   const { entrada } = state
   const [nextId, setNextId] = useState<string>('…')
+  const [subiendoFoto, setSubiendoFoto] = useState(false)
   const fotoInputRef = useRef<HTMLInputElement>(null)
 
   // Si se llega desde un QR desconocido (README: "ofrecer «Registrar como nueva entrada» con
@@ -133,36 +134,42 @@ export function CheckInScreen() {
   }
 
   const guardar = async () => {
-    const clienteId = await resolverCliente(entrada.cliente)
-    const id = idForzado ?? (await nextObjetoId())
-    await crearObjetoConEntrada({
-      id,
-      tipo: entrada.tipo,
-      descripcion: entrada.descripcion,
-      clienteId,
-      nave: entrada.nave,
-      rack: entrada.rack,
-      nivel: entrada.nivel,
-      largo: entrada.largo ? Number(entrada.largo) : null,
-      ancho: entrada.ancho ? Number(entrada.ancho) : null,
-      alto: entrada.alto ? Number(entrada.alto) : null,
-      pesoKg: entrada.peso ? Number(entrada.peso) : null,
-      piezas: entrada.piezas.map((p) => ({
-        ref: p.ref,
-        descripcion: p.descripcion,
-        largo: p.largo ? Number(p.largo) : null,
-        ancho: p.ancho ? Number(p.ancho) : null,
-      })),
-      usuarioId: state.user?.id ?? '',
-      fotoUrl: entrada.fotoUrl,
-    })
+    try {
+      const clienteId = await resolverCliente(entrada.cliente)
+      const id = idForzado ?? (await nextObjetoId())
+      await crearObjetoConEntrada({
+        id,
+        tipo: entrada.tipo,
+        descripcion: entrada.descripcion,
+        clienteId,
+        nave: entrada.nave,
+        rack: entrada.rack,
+        nivel: entrada.nivel,
+        largo: entrada.largo ? Number(entrada.largo) : null,
+        ancho: entrada.ancho ? Number(entrada.ancho) : null,
+        alto: entrada.alto ? Number(entrada.alto) : null,
+        pesoKg: entrada.peso ? Number(entrada.peso) : null,
+        piezas: entrada.piezas.map((p) => ({
+          ref: p.ref,
+          descripcion: p.descripcion,
+          largo: p.largo ? Number(p.largo) : null,
+          ancho: p.ancho ? Number(p.ancho) : null,
+        })),
+        usuarioId: state.user?.id ?? '',
+        fotoUrl: entrada.fotoUrl,
+      })
 
-    await refrescarItems()
-    dispatch({ type: 'RESET_ENTRADA' })
-    dispatch({ type: 'SET_SCANNED', scanned: null })
-    dispatch({ type: 'SET_SEL_ID', selId: id })
-    dispatch({ type: 'IR_A', screen: 'detalle' })
-    flash(`${id} registrado · etiqueta enviada a la impresora`)
+      await refrescarItems()
+      dispatch({ type: 'RESET_ENTRADA' })
+      dispatch({ type: 'SET_SCANNED', scanned: null })
+      dispatch({ type: 'SET_SEL_ID', selId: id })
+      dispatch({ type: 'IR_A', screen: 'detalle' })
+      flash(`${id} registrado · etiqueta enviada a la impresora`)
+    } catch {
+      // Si el número de inventario chocó con uno creado en otro iPad al mismo tiempo, o se
+      // cayó la conexión, se avisa y se deja el formulario intacto para reintentar.
+      flash('No se pudo guardar — revisá la conexión e intentá de nuevo')
+    }
   }
 
   return (
@@ -275,10 +282,11 @@ export function CheckInScreen() {
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-dim)', marginBottom: 10 }}>FOTO DEL OBJETO</div>
           <button
             onClick={() => fotoInputRef.current?.click()}
+            disabled={subiendoFoto}
             style={{
               appearance: 'none',
               border: 0,
-              cursor: 'pointer',
+              cursor: subiendoFoto ? 'default' : 'pointer',
               width: '100%',
               height: 172,
               borderRadius: 15,
@@ -293,7 +301,9 @@ export function CheckInScreen() {
               padding: 0,
             }}
           >
-            {entrada.fotoUrl ? (
+            {subiendoFoto ? (
+              <span style={{ fontSize: 14 }}>Subiendo foto…</span>
+            ) : entrada.fotoUrl ? (
               <img src={entrada.fotoUrl} alt="Foto del objeto" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               <>
@@ -314,7 +324,13 @@ export function CheckInScreen() {
             style={{ display: 'none' }}
             onChange={(e) => {
               const file = e.target.files?.[0]
-              if (file) fileToResizedDataUrl(file).then((fotoUrl) => set({ fotoUrl }))
+              e.target.value = ''
+              if (!file) return
+              setSubiendoFoto(true)
+              subirFoto(file)
+                .then((fotoUrl) => set({ fotoUrl }))
+                .catch(() => flash('No se pudo subir la foto — revisá la conexión'))
+                .finally(() => setSubiendoFoto(false))
             }}
           />
         </div>

@@ -23,6 +23,7 @@ export type Action =
   | { type: 'SET_FORMATO'; formato: FormatoEtiqueta }
   | { type: 'MOSTRAR_TOAST'; toast: string }
   | { type: 'LIMPIAR_TOAST' }
+  | { type: 'ERROR_CARGA'; mensaje: string }
 
 export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
@@ -102,6 +103,8 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, toast: action.toast }
     case 'LIMPIAR_TOAST':
       return { ...state, toast: '' }
+    case 'ERROR_CARGA':
+      return { ...state, cargando: false, errorCarga: action.mensaje }
     default:
       return state
   }

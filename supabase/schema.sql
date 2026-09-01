@@ -1,5 +1,6 @@
 -- Storage Control (Bodega Ramos) — esquema de Supabase
--- Ejecutar completo, una sola vez, en el SQL Editor de un proyecto nuevo de Supabase.
+-- Se puede correr entero las veces que haga falta (es idempotente): pegar todo en el SQL
+-- Editor de Supabase y darle Run, ya sea la primera vez o para traer cambios nuevos.
 -- Reemplaza la IndexedDB local por una base compartida: lo que se guarda desde un iPad
 -- lo ven los demás.
 
@@ -80,22 +81,35 @@ alter table movimientos enable row level security;
 alter table mudanzas enable row level security;
 alter table mudanza_objetos enable row level security;
 
+drop policy if exists "anon all clientes" on clientes;
 create policy "anon all clientes" on clientes for all using (true) with check (true);
+drop policy if exists "anon all usuarios" on usuarios;
 create policy "anon all usuarios" on usuarios for all using (true) with check (true);
+drop policy if exists "anon all objetos" on objetos;
 create policy "anon all objetos" on objetos for all using (true) with check (true);
+drop policy if exists "anon all movimientos" on movimientos;
 create policy "anon all movimientos" on movimientos for all using (true) with check (true);
+drop policy if exists "anon all mudanzas" on mudanzas;
 create policy "anon all mudanzas" on mudanzas for all using (true) with check (true);
+drop policy if exists "anon all mudanza_objetos" on mudanza_objetos;
 create policy "anon all mudanza_objetos" on mudanza_objetos for all using (true) with check (true);
 
 -- Realtime — para que un iPad se entere al toque de lo que se guardó en otro.
-alter publication supabase_realtime add table objetos, movimientos, mudanzas, mudanza_objetos, clientes, usuarios;
+do $$
+begin
+  alter publication supabase_realtime add table objetos, movimientos, mudanzas, mudanza_objetos, clientes, usuarios;
+exception when duplicate_object then
+  null;
+end $$;
 
 -- Storage — bucket público para las fotos de objetos y las firmas de salida.
 insert into storage.buckets (id, name, public)
 values ('fotos', 'fotos', true)
 on conflict (id) do nothing;
 
+drop policy if exists "fotos publicas de lectura" on storage.objects;
 create policy "fotos publicas de lectura" on storage.objects for select using (bucket_id = 'fotos');
+drop policy if exists "fotos publicas de escritura" on storage.objects;
 create policy "fotos publicas de escritura" on storage.objects for insert with check (bucket_id = 'fotos');
 
 -- RPC atómico — crea el objeto (y sus piezas si es guacal) más su primer movimiento de
@@ -114,6 +128,19 @@ begin
 end;
 $$;
 
+-- RPC atómico — pasa el objeto a "Fuera" y agrega el movimiento de salida al historial en
+-- una sola transacción (README, "Registrar salida").
+create or replace function confirmar_salida(
+  p_objeto_id text,
+  p_fecha_salida timestamptz,
+  p_movimiento jsonb
+) returns void language plpgsql as $$
+begin
+  update objetos set estado = 'Fuera', fecha_salida = p_fecha_salida, ubicacion = null where id = p_objeto_id;
+  insert into movimientos select * from jsonb_populate_record(null::movimientos, p_movimiento);
+end;
+$$;
+
 -- RPC atómico — borra un objeto por error junto con sus piezas, su historial y sus vínculos
 -- de mudanza (borrado en cascada, igual que la transacción que había en IndexedDB).
 create or replace function eliminar_objeto_cascada(p_id text) returns void language plpgsql as $$
@@ -124,3 +151,7 @@ begin
   delete from objetos where id = p_id;
 end;
 $$;
+
+grant execute on function crear_objeto_con_entrada(jsonb, jsonb, jsonb) to anon, authenticated;
+grant execute on function confirmar_salida(text, timestamptz, jsonb) to anon, authenticated;
+grant execute on function eliminar_objeto_cascada(text) to anon, authenticated;

@@ -76,10 +76,14 @@ export function ItemDetailScreen() {
   const eliminar = async () => {
     const confirmado = window.confirm(`¿Eliminar ${item.id} y todo su contenido e historial? Esta acción no se puede deshacer.`)
     if (!confirmado) return
-    await eliminarObjeto(item.id)
-    await refrescarItems()
-    dispatch({ type: 'IR_A', screen: 'inv' })
-    flash(`${item.id} eliminado`)
+    try {
+      await eliminarObjeto(item.id)
+      await refrescarItems()
+      dispatch({ type: 'IR_A', screen: 'inv' })
+      flash(`${item.id} eliminado`)
+    } catch {
+      flash('No se pudo eliminar — revisá la conexión e intentá de nuevo')
+    }
   }
 
   return (

@@ -1,9 +1,7 @@
-/**
- * Convierte una foto tomada con la cámara a un data URL JPEG, reducida a un tamaño razonable,
- * y la devuelve como texto para guardarla directo en IndexedDB (a diferencia de un blob: URL,
- * que se pierde al recargar la página).
- */
-export function fileToResizedDataUrl(file: File, maxDim = 1024, calidad = 0.82): Promise<string> {
+import { supabase } from '../db/supabaseClient'
+
+/** Redimensiona una foto a un tamaño razonable y la devuelve como blob JPEG. */
+function redimensionar(file: File, maxDim = 1024, calidad = 0.82): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     const url = URL.createObjectURL(file)
@@ -20,7 +18,11 @@ export function fileToResizedDataUrl(file: File, maxDim = 1024, calidad = 0.82):
       }
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
       URL.revokeObjectURL(url)
-      resolve(canvas.toDataURL('image/jpeg', calidad))
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error('No se pudo generar la imagen'))),
+        'image/jpeg',
+        calidad,
+      )
     }
     img.onerror = () => {
       URL.revokeObjectURL(url)
@@ -28,4 +30,17 @@ export function fileToResizedDataUrl(file: File, maxDim = 1024, calidad = 0.82):
     }
     img.src = url
   })
+}
+
+/**
+ * Redimensiona la foto y la sube al bucket "fotos" de Supabase Storage (público, ver
+ * supabase/schema.sql). Devuelve la URL pública, la misma que queda guardada en el objeto y se
+ * usa en la etiqueta impresa — así la foto se ve desde cualquier iPad, no sólo el que la tomó.
+ */
+export async function subirFoto(file: File): Promise<string> {
+  const blob = await redimensionar(file)
+  const ruta = `${crypto.randomUUID()}.jpg`
+  const { error } = await supabase.storage.from('fotos').upload(ruta, blob, { contentType: 'image/jpeg' })
+  if (error) throw error
+  return supabase.storage.from('fotos').getPublicUrl(ruta).data.publicUrl
 }

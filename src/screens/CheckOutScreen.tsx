@@ -33,24 +33,28 @@ export function CheckOutScreen() {
       flash('Falta el nombre de quien recibe')
       return
     }
-    await confirmarSalida({
-      objetoId: out.id,
-      motivo: state.motivo,
-      mudLink: state.mudLink ?? '',
-      recibeNombre: recibe,
-      recibeDoc: doc,
-      firmaUrl,
-      usuarioId: state.user?.id ?? '',
-    })
-    const quienRecibe = recibe.trim() + (doc.trim() ? ` (${doc.trim()})` : '')
-    await refrescarItems()
-    setRecibe('')
-    setDoc('')
-    setFirmaUrl(null)
-    dispatch({ type: 'SET_SEL_ID', selId: out.id })
-    dispatch({ type: 'SET_OUT_ID', outId: null })
-    dispatch({ type: 'IR_A', screen: 'detalle' })
-    flash(`${out.id} entregado a ${quienRecibe}`)
+    try {
+      await confirmarSalida({
+        objetoId: out.id,
+        motivo: state.motivo,
+        mudLink: state.mudLink ?? '',
+        recibeNombre: recibe,
+        recibeDoc: doc,
+        firmaUrl,
+        usuarioId: state.user?.id ?? '',
+      })
+      const quienRecibe = recibe.trim() + (doc.trim() ? ` (${doc.trim()})` : '')
+      await refrescarItems()
+      setRecibe('')
+      setDoc('')
+      setFirmaUrl(null)
+      dispatch({ type: 'SET_SEL_ID', selId: out.id })
+      dispatch({ type: 'SET_OUT_ID', outId: null })
+      dispatch({ type: 'IR_A', screen: 'detalle' })
+      flash(`${out.id} entregado a ${quienRecibe}`)
+    } catch {
+      flash('No se pudo registrar la salida — revisá la conexión e intentá de nuevo')
+    }
   }
 
   return (
