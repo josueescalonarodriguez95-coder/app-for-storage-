@@ -4,6 +4,7 @@ import { InventoryScreen } from '../../screens/InventoryScreen'
 import { ItemDetailScreen } from '../../screens/ItemDetailScreen'
 import { CheckInScreen } from '../../screens/CheckInScreen'
 import { CheckOutScreen } from '../../screens/CheckOutScreen'
+import { ScannerScreen } from '../../screens/ScannerScreen'
 
 export function ScreenRouter() {
   const { state } = useAppState()
@@ -14,7 +15,7 @@ export function ScreenRouter() {
     case 'detalle':
       return <ItemDetailScreen />
     case 'scan':
-      return <Placeholder nombre="Escáner QR" />
+      return <ScannerScreen />
     case 'entrada':
       return <CheckInScreen />
     case 'salida':

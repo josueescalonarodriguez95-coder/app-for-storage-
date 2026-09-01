@@ -96,7 +96,15 @@ export function CheckInScreen() {
   const [nextId, setNextId] = useState<string>('…')
   const fotoInputRef = useRef<HTMLInputElement>(null)
 
+  // Si se llega desde un QR desconocido (README: "ofrecer «Registrar como nueva entrada» con
+  // ese código ya asignado"), se usa el código escaneado en vez del siguiente correlativo.
+  const idForzado = state.scanned && !state.items.some((i) => i.id === state.scanned) ? state.scanned : null
+
   useEffect(() => {
+    if (idForzado) {
+      setNextId(idForzado)
+      return
+    }
     let cancelado = false
     nextObjetoId().then((id) => {
       if (!cancelado) setNextId(id)
@@ -104,7 +112,7 @@ export function CheckInScreen() {
     return () => {
       cancelado = true
     }
-  }, [state.items.length])
+  }, [state.items.length, idForzado])
 
   const set = (campos: Partial<typeof entrada>) => dispatch({ type: 'SET_CAMPO_ENTRADA', campos })
 
@@ -119,12 +127,13 @@ export function CheckInScreen() {
 
   const cancelar = () => {
     dispatch({ type: 'RESET_ENTRADA' })
+    dispatch({ type: 'SET_SCANNED', scanned: null })
     dispatch({ type: 'IR_A', screen: 'inv' })
   }
 
   const guardar = async () => {
     const clienteId = await resolverCliente(entrada.cliente)
-    const id = await nextObjetoId()
+    const id = idForzado ?? (await nextObjetoId())
     await crearObjetoConEntrada({
       id,
       tipo: entrada.tipo,
@@ -149,6 +158,7 @@ export function CheckInScreen() {
 
     await refrescarItems()
     dispatch({ type: 'RESET_ENTRADA' })
+    dispatch({ type: 'SET_SCANNED', scanned: null })
     dispatch({ type: 'SET_SEL_ID', selId: id })
     dispatch({ type: 'IR_A', screen: 'detalle' })
     flash(`${id} registrado · etiqueta enviada a la impresora`)

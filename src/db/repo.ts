@@ -29,6 +29,12 @@ export async function listObjetos() {
   return db.getAll('objetos')
 }
 
+/** Un registro por su número de inventario, sea guacal/obra/pedestal/vitrina o una pieza. */
+export async function getObjeto(id: string) {
+  const db = await getDB()
+  return db.get('objetos', id)
+}
+
 /**
  * Sólo los registros de primer nivel (guacales, obras sueltas, pedestales, vitrinas).
  * Es la lista que se ve en Inventario, en los contadores de la cabecera y en el badge del menú:

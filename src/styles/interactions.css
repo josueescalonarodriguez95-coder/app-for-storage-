@@ -28,6 +28,13 @@
   background: rgba(120, 120, 128, .2);
 }
 
+.boton-cristal-oscuro {
+  background: rgba(255, 255, 255, .16);
+}
+.boton-cristal-oscuro:hover {
+  background: rgba(255, 255, 255, .26);
+}
+
 @keyframes toast-in-out {
   0% { opacity: 0; transform: translateY(14px) scale(.97); }
   14% { opacity: 1; transform: none; }
