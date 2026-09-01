@@ -23,6 +23,17 @@ export async function seedIfEmpty(): Promise<void> {
   ])
 }
 
+/**
+ * Mantiene el personal en turno igual al de seed.ts, incluso en un iPad que ya había sembrado
+ * datos antes (por id, así que no toca objetos, mudanzas ni nada más que ya se haya registrado).
+ * Se corre siempre al abrir la app, no sólo cuando la base está vacía.
+ */
+export async function syncUsuarios(): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction('usuarios', 'readwrite')
+  await Promise.all([...USUARIOS.map((u) => tx.objectStore('usuarios').put(u)), tx.done])
+}
+
 /** Todos los registros, incluidas las piezas de guacal (contenedorId != null). */
 export async function listObjetos() {
   const db = await getDB()

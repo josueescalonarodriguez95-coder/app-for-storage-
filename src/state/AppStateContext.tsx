@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useReducer, useRef, type ReactNode } from 'react'
-import { listClientes, listMudanzas, listObjetosPrincipales, listUsuarios, seedIfEmpty } from '../db/repo'
+import { listClientes, listMudanzas, listObjetosPrincipales, listUsuarios, seedIfEmpty, syncUsuarios } from '../db/repo'
 import { reducer, type Action } from './reducer'
 import { ESTADO_INICIAL, type AppState } from './types'
 
@@ -23,6 +23,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelado = false
     seedIfEmpty()
+      .then(() => syncUsuarios())
       .then(() =>
         Promise.all([listUsuarios(), listClientes(), listObjetosPrincipales(), listMudanzas()]),
       )

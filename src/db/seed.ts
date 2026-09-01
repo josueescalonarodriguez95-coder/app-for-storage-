@@ -15,8 +15,8 @@ export const CLIENTES: Cliente[] = [
 
 export const USUARIOS: Usuario[] = [
   { id: 'usr-1-le', nombre: 'Leonardo Escalona', iniciales: 'LE', rol: 'bodega', turno: '06:00 – 14:00' },
-  { id: 'usr-2-mr', nombre: 'Marisol Ríos', iniciales: 'MR', rol: 'bodega', turno: '14:00 – 22:00' },
-  { id: 'usr-3-ar', nombre: 'Andrés Ramos', iniciales: 'AR', rol: 'admin', turno: 'Sin horario' },
+  { id: 'usr-2-mr', nombre: 'Ruberlai Castro', iniciales: 'RC', rol: 'bodega', turno: '14:00 – 22:00' },
+  { id: 'usr-3-ar', nombre: 'Rafael Ramos', iniciales: 'RR', rol: 'admin', turno: 'Sin horario' },
 ]
 
 interface PiezaSeed {

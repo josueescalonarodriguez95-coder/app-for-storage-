@@ -21,28 +21,44 @@ const PAGINA_POR_FORMATO: Record<FormatoEtiqueta, { size: string; margin: string
 const MM_A_PX = 3.7795
 
 function EtiquetaImpresa({ item, clientes, anchoMm, altoMm }: { item: Objeto; clientes: Cliente[]; anchoMm: number; altoMm: number }) {
-  const qrPx = Math.round(Math.min(anchoMm, altoMm) * 0.55 * MM_A_PX)
+  const padMm = 3
+  const gapMm = 2
+  const anchoDisponible = anchoMm - padMm * 2
+  // Tamaño del QR y de la foto (cuadrados, uno junto al otro) — cabe el ancho disponible y deja
+  // espacio abajo para el texto.
+  const imgMm = Math.min(altoMm * 0.48, (anchoDisponible - gapMm) / 2)
+  const imgPx = Math.round(imgMm * MM_A_PX)
+
   return (
     <div
       style={{
         width: `${anchoMm}mm`,
         height: `${altoMm}mm`,
-        padding: '3mm',
+        padding: `${padMm}mm`,
         boxSizing: 'border-box',
         display: 'flex',
-        gap: '3mm',
-        alignItems: 'center',
+        flexDirection: 'column',
+        gap: '1.5mm',
         border: '.2mm solid #000',
         overflow: 'hidden',
         color: '#000',
         background: '#fff',
       }}
     >
-      <QrCode value={item.id} size={qrPx} />
+      <div style={{ display: 'flex', gap: `${gapMm}mm` }}>
+        <QrCode value={item.id} size={imgPx} />
+        {item.fotoUrl && (
+          <img
+            src={item.fotoUrl}
+            alt=""
+            style={{ width: `${imgMm}mm`, height: `${imgMm}mm`, objectFit: 'cover', borderRadius: '1mm', flex: 'none' }}
+          />
+        )}
+      </div>
       <div style={{ minWidth: 0, fontFamily: 'sans-serif' }}>
         <div style={{ fontSize: '4mm', fontWeight: 700, color: '#000' }}>{item.id}</div>
-        <div style={{ fontSize: '2.6mm', marginTop: '1mm', color: '#000' }}>{nombreCliente(clientes, item.clienteId)}</div>
-        <div style={{ fontSize: '2.6mm', marginTop: '1mm', color: '#000' }}>Ramos · {formatFecha(item.fechaEntrada)}</div>
+        <div style={{ fontSize: '2.6mm', marginTop: '.8mm', color: '#000' }}>{nombreCliente(clientes, item.clienteId)}</div>
+        <div style={{ fontSize: '2.6mm', marginTop: '.8mm', color: '#000' }}>Ramos · {formatFecha(item.fechaEntrada)}</div>
       </div>
     </div>
   )
