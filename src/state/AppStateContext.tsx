@@ -19,6 +19,7 @@ const AppStateContext = createContext<AppStateContextValue | null>(null)
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, ESTADO_INICIAL)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const refrescandoRef = useRef(false)
 
   useEffect(() => {
     let cancelado = false
@@ -33,6 +34,34 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       })
     return () => {
       cancelado = true
+    }
+  }, [])
+
+  // iOS mantiene la app agregada a inicio "viva" en segundo plano: IndexedDB es la misma base
+  // que la de Safari (mismo origen), pero el estado ya cargado en memoria no se entera solo de lo
+  // que se guardó desde la otra pestaña/instancia. Al volver a primer plano, se vuelve a leer.
+  useEffect(() => {
+    async function refrescarAlVolver() {
+      if (document.visibilityState !== 'visible' || refrescandoRef.current) return
+      refrescandoRef.current = true
+      try {
+        await syncUsuarios()
+        const [usuarios, clientes, items, mudanzas] = await Promise.all([
+          listUsuarios(),
+          listClientes(),
+          listObjetosPrincipales(),
+          listMudanzas(),
+        ])
+        dispatch({ type: 'DATOS_REFRESCADOS', usuarios, clientes, items, mudanzas })
+      } finally {
+        refrescandoRef.current = false
+      }
+    }
+    document.addEventListener('visibilitychange', refrescarAlVolver)
+    window.addEventListener('focus', refrescarAlVolver)
+    return () => {
+      document.removeEventListener('visibilitychange', refrescarAlVolver)
+      window.removeEventListener('focus', refrescarAlVolver)
     }
   }, [])
 

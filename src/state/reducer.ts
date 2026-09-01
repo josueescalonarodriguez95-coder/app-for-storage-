@@ -3,6 +3,7 @@ import { ESTADO_INICIAL, type AppState, type CamposEntrada, type FormatoEtiqueta
 
 export type Action =
   | { type: 'CARGADO_INICIAL'; usuarios: Usuario[]; clientes: Cliente[]; items: Objeto[]; mudanzas: Mudanza[] }
+  | { type: 'DATOS_REFRESCADOS'; usuarios: Usuario[]; clientes: Cliente[]; items: Objeto[]; mudanzas: Mudanza[] }
   | { type: 'ITEMS_ACTUALIZADOS'; items: Objeto[] }
   | { type: 'IR_A'; screen: Screen }
   | { type: 'CAMBIAR_USUARIO'; user: Usuario }
@@ -38,6 +39,24 @@ export function reducer(state: AppState, action: Action): AppState {
         mudSel: mudActiva?.codigo ?? null,
         mudLink: mudActiva?.codigo ?? null,
         cargando: false,
+      }
+    }
+    // Refresco silencioso (p. ej. al volver a primer plano en iOS): trae lo que se haya guardado
+    // desde otra pestaña/instancia sin resetear en qué pantalla o formulario está el usuario.
+    case 'DATOS_REFRESCADOS': {
+      const usuarioVigente = action.usuarios.find((u) => u.id === state.user?.id) ?? action.usuarios[0] ?? null
+      const selIdVigente = state.selId && action.items.some((i) => i.id === state.selId) ? state.selId : (action.items[0]?.id ?? null)
+      const mudActiva = action.mudanzas.find((m) => m.estado !== 'Cerrada') ?? action.mudanzas[0]
+      const mudSelVigente = state.mudSel && action.mudanzas.some((m) => m.codigo === state.mudSel) ? state.mudSel : (mudActiva?.codigo ?? null)
+      return {
+        ...state,
+        usuarios: action.usuarios,
+        user: usuarioVigente,
+        clientes: action.clientes,
+        items: action.items,
+        mudanzas: action.mudanzas,
+        selId: selIdVigente,
+        mudSel: mudSelVigente,
       }
     }
     case 'ITEMS_ACTUALIZADOS':
