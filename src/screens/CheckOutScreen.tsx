@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { DataCard } from '../components/ui/DataCard'
 import { EstadoObjetoBadge } from '../components/ui/Badge'
+import { NavIcon } from '../components/layout/Icons'
 import { SearchField } from '../components/ui/SearchField'
 import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { SignaturePad } from '../components/ui/SignaturePad'
@@ -55,7 +56,28 @@ export function CheckOutScreen() {
   return (
     <div style={{ display: 'flex', height: '100%', minHeight: 0 }}>
       <div style={{ width: 'var(--width-salida-list)', flex: 'none', padding: 16, display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}>
-        <SearchField value={state.query} onChange={(query) => dispatch({ type: 'SET_QUERY', query })} placeholder="Escanea o escribe el número…" />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <SearchField value={state.query} onChange={(query) => dispatch({ type: 'SET_QUERY', query })} placeholder="Buscar por número, descripción…" />
+          <button
+            onClick={() => dispatch({ type: 'IR_A', screen: 'scan' })}
+            title="Escanear con la cámara"
+            className="boton-cristal"
+            style={{
+              appearance: 'none',
+              border: 0,
+              cursor: 'pointer',
+              flex: 'none',
+              width: 44,
+              height: 44,
+              borderRadius: 'var(--radius-field)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <NavIcon name="scan" color="var(--color-accent)" size={19} />
+          </button>
+        </div>
         <div style={{ flex: 1, minHeight: 0, overflow: 'auto', borderRadius: 'var(--radius-card)', background: 'var(--color-card-surface-strong)', boxShadow: 'var(--shadow-card-strong)' }}>
           {enBodega.map((item) => (
             <button
