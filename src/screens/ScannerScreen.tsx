@@ -38,8 +38,11 @@ export function ScannerScreen() {
   const [errorCamara, setErrorCamara] = useState<string | null>(null)
   const [hit, setHit] = useState<Objeto | null>(null)
   const [recientes, setRecientes] = useState<Lectura[]>([])
+  const [activo, setActivo] = useState(true)
 
   useEffect(() => {
+    if (!activo) return
+
     let stream: MediaStream | null = null
     let raf = 0
     let cancelado = false
@@ -58,6 +61,8 @@ export function ScannerScreen() {
       setRecientes((prev) =>
         [{ id: codigo, accion: objeto ? 'Consulta' : 'Desconocido', hora: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) }, ...prev].slice(0, 3),
       )
+      // Se apaga la cámara sola después de leer un código; "Escanear de nuevo" la reactiva.
+      setActivo(false)
     }
 
     function loop() {
@@ -99,9 +104,19 @@ export function ScannerScreen() {
       cancelado = true
       cancelAnimationFrame(raf)
       stream?.getTracks().forEach((t) => t.stop())
+      if (videoRef.current) videoRef.current.srcObject = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [activo])
+
+  const cancelarEscaneo = () => setActivo(false)
+
+  const escanearDeNuevo = () => {
+    ultimoLeidoRef.current = null
+    setHit(null)
+    dispatch({ type: 'SET_SCANNED', scanned: null })
+    setActivo(true)
+  }
 
   const irAFicha = (id: string) => {
     dispatch({ type: 'SET_SEL_ID', selId: id })
@@ -151,11 +166,40 @@ export function ScannerScreen() {
           Cámara trasera · lector QR
         </div>
 
+        {activo && !errorCamara && (
+          <button
+            className="boton-cristal-oscuro"
+            onClick={cancelarEscaneo}
+            aria-label="Cancelar escaneo"
+            title="Cancelar escaneo"
+            style={{
+              position: 'absolute',
+              top: 14,
+              right: 16,
+              appearance: 'none',
+              border: 0,
+              cursor: 'pointer',
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              backdropFilter: 'blur(20px)',
+              fontSize: 16,
+              lineHeight: 1,
+            }}
+          >
+            ✕
+          </button>
+        )}
+
         {errorCamara && (
           <div style={{ position: 'relative', maxWidth: 280, textAlign: 'center', color: 'rgba(255,255,255,.7)', fontSize: 14, lineHeight: 1.5 }}>{errorCamara}</div>
         )}
 
-        {!errorCamara && (
+        {!errorCamara && activo && (
           <div style={{ position: 'relative', width: 326, height: 326, borderRadius: 26, border: '1px solid rgba(255,255,255,.22)' }}>
             <div style={{ position: 'absolute', top: -1, left: -1, width: 52, height: 52, borderTop: '4px solid var(--color-accent-light)', borderLeft: '4px solid var(--color-accent-light)', borderRadius: '26px 0 0 0' }} />
             <div style={{ position: 'absolute', top: -1, right: -1, width: 52, height: 52, borderTop: '4px solid var(--color-accent-light)', borderRight: '4px solid var(--color-accent-light)', borderRadius: '0 26px 0 0' }} />
@@ -173,6 +217,37 @@ export function ScannerScreen() {
                 animation: 'scan-sweep 1.7s ease-in-out infinite alternate',
               }}
             />
+          </div>
+        )}
+
+        {!errorCamara && !activo && (
+          <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, textAlign: 'center' }}>
+            <div style={{ color: 'rgba(255,255,255,.7)', fontSize: 14, lineHeight: 1.5 }}>
+              Escaneo en pausa.
+              <br />
+              Cámara apagada para ahorrar batería.
+            </div>
+            <button
+              className="primary-button"
+              onClick={escanearDeNuevo}
+              style={{
+                appearance: 'none',
+                border: 0,
+                cursor: 'pointer',
+                minHeight: 46,
+                padding: '0 22px',
+                borderRadius: 14,
+                fontFamily: 'inherit',
+                fontSize: 16,
+                fontWeight: 600,
+                letterSpacing: '-0.015em',
+                color: '#fff',
+                background: 'var(--gradient-primary-button)',
+                boxShadow: '0 2px 8px rgba(200,50,28,.3)',
+              }}
+            >
+              Escanear de nuevo
+            </button>
           </div>
         )}
 
