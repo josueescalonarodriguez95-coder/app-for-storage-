@@ -4,22 +4,55 @@ import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { useAppState } from '../state/AppStateContext'
 import { nombreCliente } from '../state/selectors'
 import type { FormatoEtiqueta } from '../state/types'
+import type { Cliente, Objeto } from '../db/schema'
 import { formatFecha } from '../utils/fecha'
 import { formatUbicacion } from '../utils/formato'
 
 const FORMATOS: FormatoEtiqueta[] = ['60 × 40 mm', '100 × 70 mm', 'A4 · 12 por hoja']
 
-/** mm de cada etiqueta impresa, según el formato elegido — README, "Etiquetas QR". */
-const TAMANO_MM: Record<FormatoEtiqueta, { w: number; h: number }> = {
-  '60 × 40 mm': { w: 60, h: 40 },
-  '100 × 70 mm': { w: 100, h: 70 },
-  'A4 · 12 por hoja': { w: 70, h: 74 }, // A4 (210×297mm) en grilla de 3×4 = 12 por hoja
+/** Tamaño de página física por formato — cada etiqueta suelta ES la página (para impresoras de
+ * rollo tipo Brother QL/Zebra); el formato A4 usa una hoja normal con una cuadrícula de 12. */
+const PAGINA_POR_FORMATO: Record<FormatoEtiqueta, { size: string; margin: string; w: number; h: number }> = {
+  '60 × 40 mm': { size: '60mm 40mm', margin: '0', w: 60, h: 40 },
+  '100 × 70 mm': { size: '100mm 70mm', margin: '0', w: 100, h: 70 },
+  'A4 · 12 por hoja': { size: 'A4', margin: '10mm', w: 60, h: 65 },
+}
+
+const MM_A_PX = 3.7795
+
+function EtiquetaImpresa({ item, clientes, anchoMm, altoMm }: { item: Objeto; clientes: Cliente[]; anchoMm: number; altoMm: number }) {
+  const qrPx = Math.round(Math.min(anchoMm, altoMm) * 0.55 * MM_A_PX)
+  return (
+    <div
+      style={{
+        width: `${anchoMm}mm`,
+        height: `${altoMm}mm`,
+        padding: '3mm',
+        boxSizing: 'border-box',
+        display: 'flex',
+        gap: '3mm',
+        alignItems: 'center',
+        border: '.2mm solid #000',
+        overflow: 'hidden',
+        color: '#000',
+        background: '#fff',
+      }}
+    >
+      <QrCode value={item.id} size={qrPx} />
+      <div style={{ minWidth: 0, fontFamily: 'sans-serif' }}>
+        <div style={{ fontSize: '4mm', fontWeight: 700, color: '#000' }}>{item.id}</div>
+        <div style={{ fontSize: '2.6mm', marginTop: '1mm', color: '#000' }}>{nombreCliente(clientes, item.clienteId)}</div>
+        <div style={{ fontSize: '2.6mm', marginTop: '1mm', color: '#000' }}>Ramos · {formatFecha(item.fechaEntrada)}</div>
+      </div>
+    </div>
+  )
 }
 
 export function LabelsScreen() {
   const { state, dispatch, flash } = useAppState()
   const seleccionadas = state.items.filter((i) => state.etqSel.includes(i.id))
-  const tamano = TAMANO_MM[state.formato]
+  const pagina = PAGINA_POR_FORMATO[state.formato]
+  const esGrid = state.formato === 'A4 · 12 por hoja'
 
   const imprimir = () => {
     flash(`${state.etqSel.length} etiquetas enviadas a la impresora de muelle`)
@@ -97,31 +130,30 @@ export function LabelsScreen() {
 
       {createPortal(
         <div className="print-only">
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2mm' }}>
-            {seleccionadas.map((item) => (
+          <style>{`@page { size: ${pagina.size}; margin: ${pagina.margin}; }`}</style>
+          {esGrid ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4mm' }}>
+              {seleccionadas.map((item) => (
+                <EtiquetaImpresa key={item.id} item={item} clientes={state.clientes} anchoMm={pagina.w} altoMm={pagina.h} />
+              ))}
+            </div>
+          ) : (
+            seleccionadas.map((item, i) => (
               <div
                 key={item.id}
                 style={{
-                  width: `${tamano.w}mm`,
-                  height: `${tamano.h}mm`,
-                  padding: '3mm',
-                  boxSizing: 'border-box',
+                  width: '100%',
+                  height: '100%',
                   display: 'flex',
-                  gap: '3mm',
                   alignItems: 'center',
-                  border: '.2mm solid #000',
-                  pageBreakInside: 'avoid',
+                  justifyContent: 'center',
+                  pageBreakAfter: i < seleccionadas.length - 1 ? 'always' : 'auto',
                 }}
               >
-                <QrCode value={item.id} size={Math.round(tamano.h * 2.2)} />
-                <div style={{ minWidth: 0, fontFamily: 'sans-serif' }}>
-                  <div style={{ fontSize: '4mm', fontWeight: 700 }}>{item.id}</div>
-                  <div style={{ fontSize: '2.6mm', marginTop: '1mm' }}>{nombreCliente(state.clientes, item.clienteId)}</div>
-                  <div style={{ fontSize: '2.6mm', marginTop: '1mm' }}>Ramos · {formatFecha(item.fechaEntrada)}</div>
-                </div>
+                <EtiquetaImpresa item={item} clientes={state.clientes} anchoMm={pagina.w} altoMm={pagina.h} />
               </div>
-            ))}
-          </div>
+            ))
+          )}
         </div>,
         document.body,
       )}
