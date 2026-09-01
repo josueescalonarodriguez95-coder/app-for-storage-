@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { EstadoCarga, EstadoObjeto } from '../../db/schema'
+import type { EstadoCarga, EstadoMudanza, EstadoObjeto } from '../../db/schema'
 
 /**
  * Etiqueta de estado — README, tabla de "Etiquetas de estado" (radio 9px, 12px, peso 600).
@@ -49,6 +49,26 @@ export function EstadoCargaBadge({ estado }: { estado: EstadoCarga }) {
   const { bg, fg } = ESTADO_CARGA_TOKENS[estado]
   return (
     <Badge bg={bg} fg={fg}>
+      {estado}
+    </Badge>
+  )
+}
+
+/**
+ * El README no da un color propio para "Cerrada" (sólo Reservado y En tránsito comparten
+ * tabla con los estados de Objeto). Reutiliza el gris neutro de En bodega/Devuelto, que es
+ * el mismo lenguaje visual para "asunto resuelto" en esa tabla.
+ */
+const ESTADO_MUDANZA_TOKENS: Record<EstadoMudanza, { bg: string; fg: string }> = {
+  Reservado: { bg: 'var(--status-reservado-bg)', fg: 'var(--status-reservado-text)' },
+  'En tránsito': { bg: 'var(--status-en-transito-bg)', fg: 'var(--status-en-transito-text)' },
+  Cerrada: { bg: 'var(--status-en-bodega-bg)', fg: 'var(--status-en-bodega-text)' },
+}
+
+export function EstadoMudanzaBadge({ estado, size }: { estado: EstadoMudanza; size?: 'sm' | 'lg' }) {
+  const { bg, fg } = ESTADO_MUDANZA_TOKENS[estado]
+  return (
+    <Badge bg={bg} fg={fg} size={size}>
       {estado}
     </Badge>
   )

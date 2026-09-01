@@ -73,3 +73,11 @@ export async function listMudanzas() {
   const db = await getDB()
   return db.getAll('mudanzas')
 }
+
+/** Objetos vinculados a una mudanza, con su registro y su estado de carga. */
+export async function listObjetosDeMudanza(mudanzaId: string) {
+  const db = await getDB()
+  const vinculos = await db.getAllFromIndex('mudanzaObjetos', 'mudanzaId', mudanzaId)
+  const objetos = await Promise.all(vinculos.map((v) => db.get('objetos', v.objetoId)))
+  return vinculos.map((v, i) => ({ vinculo: v, objeto: objetos[i] })).filter((x) => x.objeto !== undefined)
+}

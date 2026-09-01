@@ -5,6 +5,7 @@ import { ItemDetailScreen } from '../../screens/ItemDetailScreen'
 import { CheckInScreen } from '../../screens/CheckInScreen'
 import { CheckOutScreen } from '../../screens/CheckOutScreen'
 import { ScannerScreen } from '../../screens/ScannerScreen'
+import { MovesScreen } from '../../screens/MovesScreen'
 
 export function ScreenRouter() {
   const { state } = useAppState()
@@ -21,7 +22,7 @@ export function ScreenRouter() {
     case 'salida':
       return <CheckOutScreen />
     case 'mud':
-      return <Placeholder nombre="Mudanzas" />
+      return <MovesScreen />
     case 'etq':
       return <Placeholder nombre="Etiquetas QR" />
   }
