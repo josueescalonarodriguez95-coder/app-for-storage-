@@ -143,7 +143,7 @@ export function LabelsScreen() {
                 alignItems: 'flex-start',
                 borderRadius: 'var(--radius-label-card)',
                 border: `1.5px solid ${activo ? 'var(--color-accent-light)' : 'var(--color-hairline-strong)'}`,
-                background: activo ? 'rgba(224,71,47,.08)' : 'rgba(255,255,255,.82)',
+                background: activo ? 'rgba(224,71,47,.08)' : 'var(--color-card-surface-strong)',
                 boxShadow: 'var(--shadow-card)',
               }}
             >

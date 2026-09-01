@@ -96,8 +96,8 @@ export function Sidebar() {
               fontWeight: activo ? 600 : 500,
               letterSpacing: '-0.015em',
               transition: 'background .15s, color .15s',
-              ...(activo ? { background: 'rgba(255,255,255,.92)' } : {}),
-              color: activo ? 'var(--color-text-primary)' : '#3A3A3C',
+              ...(activo ? { background: 'var(--color-card-surface-strong)' } : {}),
+              color: activo ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
               boxShadow: activo ? '0 1px 3px rgba(0,0,0,.1)' : 'none',
             }}
           >
@@ -132,7 +132,7 @@ export function Sidebar() {
           gap: 11,
           padding: 10,
           borderRadius: 16,
-          background: 'rgba(255,255,255,.6)',
+          background: 'var(--color-card-surface)',
           boxShadow: 'var(--shadow-card)',
         }}
       >

@@ -8,7 +8,7 @@ function TarjetaConteo({ etiqueta, valor }: { etiqueta: string; valor: number })
         textAlign: 'center',
         padding: '7px 15px',
         borderRadius: 14,
-        background: 'rgba(255,255,255,.72)',
+        background: 'var(--color-card-surface-strong)',
         boxShadow: '0 1px 2px rgba(0,0,0,.06)',
       }}
     >
