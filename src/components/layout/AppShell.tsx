@@ -22,7 +22,10 @@ export function AppShell() {
         position: 'fixed',
         inset: 0,
         background: 'var(--gradient-app-background)',
-        paddingTop: 'env(safe-area-inset-top)',
+        // En iPads sin Face ID (con botón de inicio), env(safe-area-inset-top) puede dar 0 aunque
+        // iOS sí dibuje la barra de estado encima del contenido en modo standalone — con max() se
+        // deja siempre al menos el alto real de esa barra, para que no se encime con el logo.
+        paddingTop: 'max(20px, env(safe-area-inset-top))',
         paddingRight: 'env(safe-area-inset-right)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         paddingLeft: 'env(safe-area-inset-left)',

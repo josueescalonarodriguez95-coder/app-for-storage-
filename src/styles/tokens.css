@@ -99,3 +99,81 @@
   --height-button-primary-lg: 50px;
   --height-header: 56px;
 }
+
+/*
+  Tema oscuro — no está en el diseño aprobado (README es sólo el look claro iPadOS 26); esta
+  paleta se derivó siguiendo las convenciones de Dark Mode de iOS (mismo acento de marca, fondos y
+  superficies invertidos). Ajustable si no gusta.
+
+  "Sistema" = sin atributo data-theme, decide prefers-color-scheme. "Oscuro"/"Claro" = elegido a
+  mano, vía el selector del sidebar, guardado en localStorage y aplicado con data-theme.
+*/
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-text-primary: #F5F5F7;
+    --color-text-secondary: rgba(235, 235, 245, .68);
+    --color-text-tertiary: rgba(235, 235, 245, .5);
+    --color-text-dim: rgba(235, 235, 245, .35);
+
+    --gradient-app-background: radial-gradient(120% 110% at 12% 0%, #221F1D 0%, #171615 42%, #0E0E0D 100%);
+    --color-card-surface: rgba(44, 44, 46, .78);
+    --color-card-surface-strong: rgba(44, 44, 46, .84);
+    --color-nav-glass: rgba(28, 28, 30, .6);
+    --color-header-glass: rgba(28, 28, 30, .5);
+    --color-control-fill: rgba(120, 120, 128, .28);
+    --color-control-fill-strong: rgba(120, 120, 128, .32);
+    --color-hairline: rgba(255, 255, 255, .08);
+    --color-hairline-strong: rgba(255, 255, 255, .12);
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, .35);
+    --shadow-card-strong: 0 1px 3px rgba(0, 0, 0, .4);
+
+    --status-en-bodega-bg: rgba(120, 120, 128, .3);
+    --status-en-bodega-text: #EBEBF5;
+    --status-fuera-bg: rgba(255, 105, 97, .22);
+    --status-fuera-text: #FF6961;
+    --status-en-transito-bg: rgba(224, 71, 47, .9);
+    --status-en-transito-text: #FFFFFF;
+    --status-reservado-bg: rgba(120, 120, 128, .4);
+    --status-reservado-text: #FFFFFF;
+    --status-cargado-bg: rgba(48, 209, 88, .22);
+    --status-cargado-text: #30D158;
+    --status-pendiente-bg: rgba(255, 159, 10, .24);
+    --status-pendiente-text: #FFB340;
+    --status-devuelto-bg: rgba(120, 120, 128, .3);
+    --status-devuelto-text: #EBEBF5;
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-text-primary: #F5F5F7;
+  --color-text-secondary: rgba(235, 235, 245, .68);
+  --color-text-tertiary: rgba(235, 235, 245, .5);
+  --color-text-dim: rgba(235, 235, 245, .35);
+
+  --gradient-app-background: radial-gradient(120% 110% at 12% 0%, #221F1D 0%, #171615 42%, #0E0E0D 100%);
+  --color-card-surface: rgba(44, 44, 46, .78);
+  --color-card-surface-strong: rgba(44, 44, 46, .84);
+  --color-nav-glass: rgba(28, 28, 30, .6);
+  --color-header-glass: rgba(28, 28, 30, .5);
+  --color-control-fill: rgba(120, 120, 128, .28);
+  --color-control-fill-strong: rgba(120, 120, 128, .32);
+  --color-hairline: rgba(255, 255, 255, .08);
+  --color-hairline-strong: rgba(255, 255, 255, .12);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, .35);
+  --shadow-card-strong: 0 1px 3px rgba(0, 0, 0, .4);
+
+  --status-en-bodega-bg: rgba(120, 120, 128, .3);
+  --status-en-bodega-text: #EBEBF5;
+  --status-fuera-bg: rgba(255, 105, 97, .22);
+  --status-fuera-text: #FF6961;
+  --status-en-transito-bg: rgba(224, 71, 47, .9);
+  --status-en-transito-text: #FFFFFF;
+  --status-reservado-bg: rgba(120, 120, 128, .4);
+  --status-reservado-text: #FFFFFF;
+  --status-cargado-bg: rgba(48, 209, 88, .22);
+  --status-cargado-text: #30D158;
+  --status-pendiente-bg: rgba(255, 159, 10, .24);
+  --status-pendiente-text: #FFB340;
+  --status-devuelto-bg: rgba(120, 120, 128, .3);
+  --status-devuelto-text: #EBEBF5;
+}

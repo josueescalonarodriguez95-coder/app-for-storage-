@@ -1,6 +1,7 @@
 import { useAppState } from '../../state/AppStateContext'
 import { contadorMudanzasActivas } from '../../state/selectors'
 import type { Screen } from '../../state/types'
+import { ThemeToggle } from '../ui/ThemeToggle'
 import { NavIcon, type IconName } from './Icons'
 
 interface Destino {
@@ -178,6 +179,8 @@ export function Sidebar() {
           ))}
         </select>
       </div>
+
+      <ThemeToggle />
     </nav>
   )
 }
