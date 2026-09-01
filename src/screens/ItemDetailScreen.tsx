@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { DataCard } from '../components/ui/DataCard'
 import { QrCode } from '../components/ui/QrCode'
+import { eliminarObjeto } from '../db/mutations'
 import { listMovimientosByObjeto, listPiezas } from '../db/repo'
 import type { EventoMovimiento, Movimiento, Objeto } from '../db/schema'
 import { useAppState } from '../state/AppStateContext'
@@ -42,7 +43,7 @@ function BotonSecundario({ children, onClick }: { children: ReactNode; onClick: 
 }
 
 export function ItemDetailScreen() {
-  const { state, dispatch } = useAppState()
+  const { state, dispatch, flash, refrescarItems } = useAppState()
   const [piezas, setPiezas] = useState<Objeto[]>([])
   const [historial, setHistorial] = useState<Movimiento[]>([])
 
@@ -71,6 +72,15 @@ export function ItemDetailScreen() {
   }
 
   const cliente = nombreCliente(state.clientes, item.clienteId)
+
+  const eliminar = async () => {
+    const confirmado = window.confirm(`¿Eliminar ${item.id} y todo su contenido e historial? Esta acción no se puede deshacer.`)
+    if (!confirmado) return
+    await eliminarObjeto(item.id)
+    await refrescarItems()
+    dispatch({ type: 'IR_A', screen: 'inv' })
+    flash(`${item.id} eliminado`)
+  }
 
   return (
     <div style={{ display: 'flex', height: '100%', minHeight: 0 }}>
@@ -154,9 +164,14 @@ export function ItemDetailScreen() {
               justifyContent: 'center',
               color: 'var(--color-text-dim)',
               fontSize: 14,
+              overflow: 'hidden',
             }}
           >
-            Foto del objeto
+            {item.fotoUrl ? (
+              <img src={item.fotoUrl} alt={`Foto de ${item.id}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              'Foto del objeto'
+            )}
           </div>
         </div>
 
@@ -209,6 +224,23 @@ export function ItemDetailScreen() {
             }}
           >
             Reimprimir etiqueta
+          </button>
+          <button
+            onClick={eliminar}
+            style={{
+              appearance: 'none',
+              border: 0,
+              background: 'transparent',
+              cursor: 'pointer',
+              marginTop: 4,
+              padding: '6px 0',
+              fontFamily: 'inherit',
+              fontSize: 13,
+              color: 'var(--color-text-dim)',
+              textAlign: 'center',
+            }}
+          >
+            Eliminar registro
           </button>
         </div>
       </aside>

@@ -4,6 +4,7 @@ import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { crearObjetoConEntrada, nextObjetoId, resolverCliente } from '../db/mutations'
 import type { TipoObjeto } from '../db/schema'
 import { useAppState } from '../state/AppStateContext'
+import { fileToResizedDataUrl } from '../utils/imagen'
 
 const TIPOS: TipoObjeto[] = ['Guacal', 'Obra', 'Pedestal', 'Vitrina']
 const NAVES = ['N1', 'N2', 'N3']
@@ -313,7 +314,7 @@ export function CheckInScreen() {
             style={{ display: 'none' }}
             onChange={(e) => {
               const file = e.target.files?.[0]
-              if (file) set({ fotoUrl: URL.createObjectURL(file) })
+              if (file) fileToResizedDataUrl(file).then((fotoUrl) => set({ fotoUrl }))
             }}
           />
         </div>

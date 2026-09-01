@@ -167,3 +167,32 @@ export async function confirmarSalida(datos: DatosSalida): Promise<void> {
     tx.done,
   ])
 }
+
+/**
+ * Borra un registro por error (guacal, obra suelta, pedestal o vitrina) junto con sus piezas,
+ * su historial y sus vínculos a mudanzas. No está en el diseño original —el README pide que el
+ * historial sea append-only— pero hace falta para poder limpiar una alta hecha por equivocación.
+ */
+export async function eliminarObjeto(id: string): Promise<void> {
+  const db = await getDB()
+  const [piezas, movimientos, vinculos] = await Promise.all([
+    db.getAllFromIndex('objetos', 'contenedorId', id),
+    db.getAllFromIndex('movimientos', 'objetoId', id),
+    db.getAllFromIndex('mudanzaObjetos', 'objetoId', id),
+  ])
+
+  const tx = db.transaction(['objetos', 'movimientos', 'mudanzaObjetos'], 'readwrite')
+  await Promise.all([
+    tx.objectStore('objetos').delete(id),
+    ...piezas.map((p) => tx.objectStore('objetos').delete(p.id)),
+    ...movimientos.map((m) => tx.objectStore('movimientos').delete(m.id)),
+    ...vinculos.map((v) => tx.objectStore('mudanzaObjetos').delete([v.mudanzaId, v.objetoId])),
+    tx.done,
+  ])
+}
+
+/** Quita el vínculo entre un objeto y una mudanza (no borra el objeto ni la mudanza). */
+export async function desvincularDeMudanza(mudanzaId: string, objetoId: string): Promise<void> {
+  const db = await getDB()
+  await db.delete('mudanzaObjetos', [mudanzaId, objetoId])
+}

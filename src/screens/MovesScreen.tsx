@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { EstadoCargaBadge, EstadoMudanzaBadge } from '../components/ui/Badge'
 import { DataCard } from '../components/ui/DataCard'
+import { desvincularDeMudanza } from '../db/mutations'
 import { listObjetosDeMudanza } from '../db/repo'
 import type { Objeto } from '../db/schema'
 import { useAppState } from '../state/AppStateContext'
@@ -16,26 +17,39 @@ interface Vinculo {
 }
 
 export function MovesScreen() {
-  const { state, dispatch } = useAppState()
+  const { state, dispatch, flash } = useAppState()
   const [porMudanza, setPorMudanza] = useState<Record<string, Vinculo[]>>({})
 
   const mud = state.mudanzas.find((m) => m.codigo === state.mudSel) ?? null
   const vinculados = mud ? (porMudanza[mud.codigo] ?? []) : []
 
-  useEffect(() => {
-    let cancelado = false
-    Promise.all(
+  const cargarVinculos = async () => {
+    const entradas = await Promise.all(
       state.mudanzas.map(async (m) => {
         const filas = await listObjetosDeMudanza(m.codigo)
         return [m.codigo, filas.map((f) => ({ objeto: f.objeto as Objeto, carga: f.vinculo.estadoCarga }))] as const
       }),
-    ).then((entradas) => {
-      if (!cancelado) setPorMudanza(Object.fromEntries(entradas))
+    )
+    setPorMudanza(Object.fromEntries(entradas))
+  }
+
+  useEffect(() => {
+    let cancelado = false
+    cargarVinculos().catch(() => {
+      if (!cancelado) setPorMudanza({})
     })
     return () => {
       cancelado = true
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.mudanzas])
+
+  const quitar = async (objetoId: string) => {
+    if (!mud) return
+    await desvincularDeMudanza(mud.codigo, objetoId)
+    await cargarVinculos()
+    flash(`${objetoId} desvinculado de ${mud.codigo}`)
+  }
 
   if (!mud) {
     return (
@@ -127,8 +141,24 @@ export function MovesScreen() {
               <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{objeto.id}</span>
               <span style={{ paddingRight: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{objeto.descripcion}</span>
               <span style={{ color: 'var(--color-text-secondary)', fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>{formatUbicacion(objeto.ubicacion)}</span>
-              <span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <EstadoCargaBadge estado={carga} />
+                <button
+                  onClick={() => quitar(objeto.id)}
+                  title="Quitar de esta mudanza"
+                  style={{
+                    appearance: 'none',
+                    border: 0,
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    padding: 2,
+                    fontSize: 13,
+                    lineHeight: 1,
+                    color: 'var(--color-text-dim)',
+                  }}
+                >
+                  ×
+                </button>
               </span>
             </div>
           ))}
