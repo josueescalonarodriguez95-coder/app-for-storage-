@@ -1,15 +1,18 @@
 import type { ReactNode } from 'react'
 import type { EstadoCarga, EstadoObjeto } from '../../db/schema'
 
-/** Etiqueta de estado — README, tabla de "Etiquetas de estado" (radio 9px, 12px, peso 600). */
-export function Badge({ bg, fg, children }: { bg: string; fg: string; children: ReactNode }) {
+/**
+ * Etiqueta de estado — README, tabla de "Etiquetas de estado" (radio 9px, 12px, peso 600).
+ * `size="lg"` es la variante junto a un número de cabecera (Salida, Mudanzas): 10px/13px, del prototipo.
+ */
+export function Badge({ bg, fg, children, size = 'sm' }: { bg: string; fg: string; children: ReactNode; size?: 'sm' | 'lg' }) {
   return (
     <span
       style={{
         display: 'inline-block',
-        padding: '3px 10px',
-        borderRadius: 'var(--radius-badge)',
-        fontSize: 12,
+        padding: size === 'lg' ? '4px 11px' : '3px 10px',
+        borderRadius: size === 'lg' ? 10 : 'var(--radius-badge)',
+        fontSize: size === 'lg' ? 13 : 12,
         fontWeight: 600,
         background: bg,
         color: fg,
@@ -27,10 +30,10 @@ const ESTADO_OBJETO_TOKENS: Record<EstadoObjeto, { bg: string; fg: string }> = {
   Reservado: { bg: 'var(--status-reservado-bg)', fg: 'var(--status-reservado-text)' },
 }
 
-export function EstadoObjetoBadge({ estado }: { estado: EstadoObjeto }) {
+export function EstadoObjetoBadge({ estado, size }: { estado: EstadoObjeto; size?: 'sm' | 'lg' }) {
   const { bg, fg } = ESTADO_OBJETO_TOKENS[estado]
   return (
-    <Badge bg={bg} fg={fg}>
+    <Badge bg={bg} fg={fg} size={size}>
       {estado}
     </Badge>
   )

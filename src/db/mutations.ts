@@ -1,6 +1,6 @@
 import { getDB } from './db'
 import { listClientes, listObjetosPrincipales } from './repo'
-import type { Cliente, Movimiento, Objeto, TipoCliente } from './schema'
+import type { Cliente, MotivoSalida, Movimiento, Objeto, TipoCliente } from './schema'
 
 /** Siguiente número de inventario libre: el mayor RD-#### existente + 1. */
 export async function nextObjetoId(): Promise<string> {
@@ -119,6 +119,50 @@ export async function crearObjetoConEntrada(datos: NuevaEntrada): Promise<void> 
   await Promise.all([
     tx.objectStore('objetos').put(objeto),
     ...piezas.map((p) => tx.objectStore('objetos').put(p)),
+    tx.objectStore('movimientos').put(movimiento),
+    tx.done,
+  ])
+}
+
+export interface DatosSalida {
+  objetoId: string
+  motivo: MotivoSalida
+  mudLink: string
+  recibeNombre: string
+  recibeDoc: string
+  firmaUrl: string | null
+  usuarioId: string
+}
+
+/**
+ * Confirma la salida — README, "Registrar salida": el objeto pasa a «Fuera», se le pone fecha
+ * de salida, se le borra la ubicación, y se añade al historial una entrada «Salida» con nota
+ * `motivo · código de mudanza · recibe <nombre> (<id>)`, firmada por el usuario en turno.
+ */
+export async function confirmarSalida(datos: DatosSalida): Promise<void> {
+  const db = await getDB()
+  const objeto = await db.get('objetos', datos.objetoId)
+  if (!objeto) throw new Error(`Objeto ${datos.objetoId} no encontrado`)
+
+  const ahora = new Date().toISOString()
+  const quienRecibe = datos.recibeNombre.trim() + (datos.recibeDoc.trim() ? ` (${datos.recibeDoc.trim()})` : '')
+
+  const movimiento: Movimiento = {
+    id: `${datos.objetoId}-mov-${ahora}`,
+    objetoId: datos.objetoId,
+    evento: 'Salida',
+    fechaHora: ahora,
+    nota: `${datos.motivo} · ${datos.mudLink} · recibe ${quienRecibe}`,
+    usuarioId: datos.usuarioId,
+    recibeNombre: datos.recibeNombre.trim(),
+    recibeDoc: datos.recibeDoc.trim() || null,
+    firmaUrl: datos.firmaUrl,
+    mudanzaId: datos.mudLink,
+  }
+
+  const tx = db.transaction(['objetos', 'movimientos'], 'readwrite')
+  await Promise.all([
+    tx.objectStore('objetos').put({ ...objeto, estado: 'Fuera', fechaSalida: ahora, ubicacion: null }),
     tx.objectStore('movimientos').put(movimiento),
     tx.done,
   ])

@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { DataCard } from '../components/ui/DataCard'
 import { QrCode } from '../components/ui/QrCode'
 import { listMovimientosByObjeto, listPiezas } from '../db/repo'
 import type { EventoMovimiento, Movimiento, Objeto } from '../db/schema'
@@ -14,27 +15,6 @@ const COLOR_EVENTO: Record<EventoMovimiento, string> = {
   Reservado: 'var(--color-accent-dark)',
   Salida: 'var(--color-accent-dark)',
   Devolución: 'var(--color-accent-dark)',
-}
-
-function TarjetaDato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
-  return (
-    <div style={{ borderRadius: 16, background: 'var(--color-card-surface)', boxShadow: 'var(--shadow-card)', padding: '12px 14px' }}>
-      <div style={{ fontSize: 12, color: 'var(--color-text-dim)' }}>{etiqueta}</div>
-      <div
-        style={{
-          fontSize: 16,
-          fontWeight: 600,
-          letterSpacing: '-0.02em',
-          marginTop: 2,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {valor}
-      </div>
-    </div>
-  )
 }
 
 function BotonSecundario({ children, onClick }: { children: ReactNode; onClick: () => void }) {
@@ -100,14 +80,14 @@ export function ItemDetailScreen() {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
-          <TarjetaDato etiqueta="Tipo" valor={item.tipo} />
-          <TarjetaDato etiqueta="Cliente" valor={cliente} />
-          <TarjetaDato etiqueta="Ubicación" valor={formatUbicacion(item.ubicacion)} />
-          <TarjetaDato etiqueta="Estado" valor={item.estado} />
-          <TarjetaDato etiqueta="Entrada" valor={formatFecha(item.fechaEntrada)} />
-          <TarjetaDato etiqueta="Salida" valor={item.fechaSalida ? formatFecha(item.fechaSalida) : '—'} />
-          <TarjetaDato etiqueta="Medidas" valor={formatMedidas(item.medidas)} />
-          <TarjetaDato etiqueta="Peso" valor={formatPeso(item.pesoKg)} />
+          <DataCard etiqueta="Tipo" valor={item.tipo} />
+          <DataCard etiqueta="Cliente" valor={cliente} />
+          <DataCard etiqueta="Ubicación" valor={formatUbicacion(item.ubicacion)} />
+          <DataCard etiqueta="Estado" valor={item.estado} />
+          <DataCard etiqueta="Entrada" valor={formatFecha(item.fechaEntrada)} />
+          <DataCard etiqueta="Salida" valor={item.fechaSalida ? formatFecha(item.fechaSalida) : '—'} />
+          <DataCard etiqueta="Medidas" valor={formatMedidas(item.medidas)} />
+          <DataCard etiqueta="Peso" valor={formatPeso(item.pesoKg)} />
         </div>
 
         {piezas.length > 0 && (

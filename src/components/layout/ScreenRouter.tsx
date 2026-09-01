@@ -3,6 +3,7 @@ import { Placeholder } from '../../screens/Placeholder'
 import { InventoryScreen } from '../../screens/InventoryScreen'
 import { ItemDetailScreen } from '../../screens/ItemDetailScreen'
 import { CheckInScreen } from '../../screens/CheckInScreen'
+import { CheckOutScreen } from '../../screens/CheckOutScreen'
 
 export function ScreenRouter() {
   const { state } = useAppState()
@@ -17,7 +18,7 @@ export function ScreenRouter() {
     case 'entrada':
       return <CheckInScreen />
     case 'salida':
-      return <Placeholder nombre="Registrar salida" />
+      return <CheckOutScreen />
     case 'mud':
       return <Placeholder nombre="Mudanzas" />
     case 'etq':
