@@ -38,7 +38,7 @@ export function SegmentedControl<T extends string>({
               letterSpacing: '-0.015em',
               whiteSpace: 'nowrap',
               transition: 'background .15s',
-              background: activo ? '#fff' : 'transparent',
+              background: activo ? 'var(--color-segment-pill)' : 'transparent',
               color: activo ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
               boxShadow: activo ? '0 1px 3px rgba(0,0,0,.16)' : 'none',
             }}

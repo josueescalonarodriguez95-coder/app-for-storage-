@@ -1,63 +1,68 @@
 import { useEffect, useState } from 'react'
 import { aplicarPreferenciaTema, leerPreferenciaTema, type PreferenciaTema } from '../../utils/tema'
 
-const OPCIONES: { valor: PreferenciaTema; etiqueta: string }[] = [
-  { valor: 'Sistema', etiqueta: 'Auto' },
-  { valor: 'Claro', etiqueta: 'Claro' },
-  { valor: 'Oscuro', etiqueta: 'Oscuro' },
-]
-
 /**
- * Selector de apariencia — no estaba en el diseño aprobado (el README es sólo el look claro
- * iPadOS 26); se agregó a pedido tras probar la app instalada. Va aparte de SegmentedControl
- * porque ese componente sí sigue el spec exacto del README y no debe tocarse.
+ * Interruptor de apariencia — no estaba en el diseño aprobado (el README es sólo el look claro
+ * iPadOS 26); se agregó a pedido tras probar la app instalada. Ícono pequeño de sol/luna en vez
+ * de un segmentado para no competir visualmente con la nav; sólo Claro/Oscuro, sin "Sistema".
  */
 export function ThemeToggle() {
-  const [pref, setPref] = useState<PreferenciaTema>('Sistema')
+  const [pref, setPref] = useState<PreferenciaTema>('Claro')
 
   useEffect(() => {
     setPref(leerPreferenciaTema())
   }, [])
 
-  const cambiar = (nueva: PreferenciaTema) => {
+  const alternar = () => {
+    const nueva: PreferenciaTema = pref === 'Oscuro' ? 'Claro' : 'Oscuro'
     setPref(nueva)
     aplicarPreferenciaTema(nueva)
   }
 
+  const oscuro = pref === 'Oscuro'
+
   return (
-    <div style={{ padding: '10px 2px 2px' }}>
-      <div style={{ font: 'var(--text-section-label)', color: 'var(--color-text-dim)', marginBottom: 6, paddingLeft: 8 }}>
-        Apariencia
-      </div>
-      <div style={{ display: 'flex', gap: 3, padding: 3, borderRadius: 11, background: 'var(--color-control-fill)' }}>
-        {OPCIONES.map((o) => {
-          const activo = pref === o.valor
-          return (
-            <button
-              key={o.valor}
-              onClick={() => cambiar(o.valor)}
-              style={{
-                flex: 1,
-                minWidth: 0,
-                appearance: 'none',
-                border: 0,
-                cursor: 'pointer',
-                padding: '6px 2px',
-                borderRadius: 8,
-                fontFamily: 'inherit',
-                fontSize: 12,
-                fontWeight: activo ? 600 : 500,
-                letterSpacing: '-0.01em',
-                background: activo ? 'var(--color-card-surface-strong)' : 'transparent',
-                color: activo ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-                boxShadow: activo ? '0 1px 3px rgba(0,0,0,.16)' : 'none',
-              }}
-            >
-              {o.etiqueta}
-            </button>
-          )
-        })}
-      </div>
-    </div>
+    <button
+      onClick={alternar}
+      aria-label={oscuro ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+      title={oscuro ? 'Modo claro' : 'Modo oscuro'}
+      style={{
+        appearance: 'none',
+        border: 0,
+        cursor: 'pointer',
+        flex: 'none',
+        width: 26,
+        height: 26,
+        borderRadius: 8,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--color-control-fill)',
+        color: 'var(--color-text-tertiary)',
+      }}
+    >
+      {oscuro ? (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"
+            fill="currentColor"
+          />
+        </svg>
+      ) : (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="4.6" fill="currentColor" />
+          <g stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="12" y1="1.5" x2="12" y2="4.2" />
+            <line x1="12" y1="19.8" x2="12" y2="22.5" />
+            <line x1="1.5" y1="12" x2="4.2" y2="12" />
+            <line x1="19.8" y1="12" x2="22.5" y2="12" />
+            <line x1="4.4" y1="4.4" x2="6.3" y2="6.3" />
+            <line x1="17.7" y1="17.7" x2="19.6" y2="19.6" />
+            <line x1="4.4" y1="19.6" x2="6.3" y2="17.7" />
+            <line x1="17.7" y1="6.3" x2="19.6" y2="4.4" />
+          </g>
+        </svg>
+      )}
+    </button>
   )
 }

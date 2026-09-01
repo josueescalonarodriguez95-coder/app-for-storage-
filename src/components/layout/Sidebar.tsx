@@ -52,14 +52,24 @@ export function Sidebar() {
 
       <div
         style={{
-          font: 'var(--text-section-label)',
-          letterSpacing: '0.04em',
-          textTransform: 'uppercase',
-          color: 'var(--color-text-dim)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
           padding: '6px 10px 6px',
         }}
       >
-        Operación
+        <span
+          style={{
+            font: 'var(--text-section-label)',
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase',
+            color: 'var(--color-text-dim)',
+          }}
+        >
+          Operación
+        </span>
+        <ThemeToggle />
       </div>
 
       {destinos.map((d) => {
@@ -179,8 +189,6 @@ export function Sidebar() {
           ))}
         </select>
       </div>
-
-      <ThemeToggle />
     </nav>
   )
 }
