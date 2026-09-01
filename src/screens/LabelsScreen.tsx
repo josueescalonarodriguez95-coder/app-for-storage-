@@ -21,19 +21,19 @@ const PAGINA_POR_FORMATO: Record<FormatoEtiqueta, { size: string; margin: string
 const MM_A_PX = 3.7795
 const LINEAS_DE_TEXTO = 4
 const ALTO_LINEA_MM = 2.7
-const ALTO_LOGO_MM = 5
 
 function EtiquetaImpresa({ item, clientes, anchoMm, altoMm }: { item: Objeto; clientes: Cliente[]; anchoMm: number; altoMm: number }) {
   const padMm = 2.5
   const gapMm = 1.5
   const anchoDisponible = anchoMm - padMm * 2
+  const altoLogoMm = Math.min(Math.max(altoMm * 0.2, 6), 12)
   const bloqueTextoMm = LINEAS_DE_TEXTO * ALTO_LINEA_MM
-  const bloqueLogoMm = ALTO_LOGO_MM + gapMm
-  const altoParaImagenes = altoMm - padMm * 2 - bloqueLogoMm - bloqueTextoMm - gapMm * 2
-  // Tamaño del QR y de la foto (cuadrados, uno junto al otro): lo que quepa en el ancho o en el
-  // alto que sobra después del logo y del bloque de texto, lo que sea menor.
-  const imgMm = Math.max(10, Math.min(altoParaImagenes, (anchoDisponible - gapMm) / 2))
-  const imgPx = Math.round(imgMm * MM_A_PX)
+  const altoParaImagenes = altoMm - padMm * 2 - altoLogoMm - bloqueTextoMm - gapMm * 2
+  // La foto ocupa lo que sobre de alto (o de ancho, si es más chico); el QR va un poco más
+  // pequeño que la foto, como pidió el usuario.
+  const fotoMm = Math.max(8, Math.min(altoParaImagenes, (anchoDisponible - gapMm) / 2))
+  const qrMm = fotoMm * 0.8
+  const qrPx = Math.round(qrMm * MM_A_PX)
   const textoBase = { fontSize: '2.3mm', color: '#000', lineHeight: `${ALTO_LINEA_MM}mm`, whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis' }
 
   return (
@@ -55,18 +55,8 @@ function EtiquetaImpresa({ item, clientes, anchoMm, altoMm }: { item: Objeto; cl
       <img
         src="/icons/ramos-logo.jpeg"
         alt="Ramos Delivery"
-        style={{ width: `${ALTO_LOGO_MM}mm`, height: `${ALTO_LOGO_MM}mm`, objectFit: 'contain', alignSelf: 'center', flex: 'none' }}
+        style={{ width: `${altoLogoMm}mm`, height: `${altoLogoMm}mm`, objectFit: 'contain', alignSelf: 'center', flex: 'none' }}
       />
-      <div style={{ display: 'flex', gap: `${gapMm}mm`, justifyContent: 'center', flex: 'none' }}>
-        <QrCode value={item.id} size={imgPx} />
-        {item.fotoUrl && (
-          <img
-            src={item.fotoUrl}
-            alt=""
-            style={{ width: `${imgMm}mm`, height: `${imgMm}mm`, objectFit: 'cover', borderRadius: '.8mm', flex: 'none' }}
-          />
-        )}
-      </div>
       <div style={{ minWidth: 0, fontFamily: 'sans-serif' }}>
         <div style={{ ...textoBase, fontSize: '3.6mm', fontWeight: 700, lineHeight: '3.8mm' }}>{item.id}</div>
         <div style={textoBase}>
@@ -76,6 +66,16 @@ function EtiquetaImpresa({ item, clientes, anchoMm, altoMm }: { item: Objeto; cl
         <div style={textoBase}>
           {formatMedidas(item.medidas)} cm · {formatPeso(item.pesoKg)} · {formatFecha(item.fechaEntrada)}
         </div>
+      </div>
+      <div style={{ display: 'flex', gap: `${gapMm}mm`, alignItems: 'flex-end', justifyContent: 'center', flex: 'none' }}>
+        <QrCode value={item.id} size={qrPx} />
+        {item.fotoUrl && (
+          <img
+            src={item.fotoUrl}
+            alt=""
+            style={{ width: `${fotoMm}mm`, height: `${fotoMm}mm`, objectFit: 'cover', borderRadius: '.8mm', flex: 'none' }}
+          />
+        )}
       </div>
     </div>
   )
