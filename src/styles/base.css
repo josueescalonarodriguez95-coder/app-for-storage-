@@ -41,6 +41,11 @@ button {
 }
 
 @media print {
+  /* El fondo cálido de la app (body) no debe imprimirse: gasta tinta en toda la hoja aunque el
+     contenido real de la etiqueta sea chico. */
+  body {
+    background: #fff;
+  }
   /* #root queda vacío (su único hijo, .app-shell, se oculta) pero conserva height:100% de la
      regla de arriba, así que ocupa una página entera en blanco antes de las etiquetas si no se
      lo quitamos aquí también. */
