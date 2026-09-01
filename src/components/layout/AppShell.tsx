@@ -17,6 +17,7 @@ export function AppShell() {
 
   return (
     <div
+      className="app-shell"
       style={{
         position: 'fixed',
         inset: 0,

@@ -31,3 +31,20 @@ button {
 button {
   cursor: pointer;
 }
+
+/*
+  Vista de impresión de etiquetas (pantalla "Etiquetas QR"). En producción esto se manda por
+  AirPrint a la impresora del muelle (README); aquí es la vista previa vía window.print().
+*/
+.print-only {
+  display: none;
+}
+
+@media print {
+  .app-shell {
+    display: none !important;
+  }
+  .print-only {
+    display: block;
+  }
+}

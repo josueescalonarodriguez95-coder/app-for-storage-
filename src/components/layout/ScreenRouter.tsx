@@ -1,11 +1,11 @@
 import { useAppState } from '../../state/AppStateContext'
-import { Placeholder } from '../../screens/Placeholder'
 import { InventoryScreen } from '../../screens/InventoryScreen'
 import { ItemDetailScreen } from '../../screens/ItemDetailScreen'
 import { CheckInScreen } from '../../screens/CheckInScreen'
 import { CheckOutScreen } from '../../screens/CheckOutScreen'
 import { ScannerScreen } from '../../screens/ScannerScreen'
 import { MovesScreen } from '../../screens/MovesScreen'
+import { LabelsScreen } from '../../screens/LabelsScreen'
 
 export function ScreenRouter() {
   const { state } = useAppState()
@@ -24,6 +24,6 @@ export function ScreenRouter() {
     case 'mud':
       return <MovesScreen />
     case 'etq':
-      return <Placeholder nombre="Etiquetas QR" />
+      return <LabelsScreen />
   }
 }
