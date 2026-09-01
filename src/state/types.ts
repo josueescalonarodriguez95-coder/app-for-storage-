@@ -27,6 +27,7 @@ export interface CamposEntrada {
   rack: string
   nivel: string
   piezas: PiezaFormulario[]
+  fotoUrl: string | null
 }
 
 export type FormatoEtiqueta = '60 × 40 mm' | '100 × 70 mm' | 'A4 · 12 por hoja'
@@ -68,6 +69,7 @@ export const CAMPOS_ENTRADA_VACIOS: CamposEntrada = {
   rack: '',
   nivel: '',
   piezas: [],
+  fotoUrl: null,
 }
 
 export const ESTADO_INICIAL: AppState = {
