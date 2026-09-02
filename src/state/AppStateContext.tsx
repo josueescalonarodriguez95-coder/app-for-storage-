@@ -12,6 +12,10 @@ interface AppStateContextValue {
   dispatch: React.Dispatch<Action>
   /** Vuelve a leer los registros de primer nivel desde Supabase tras un guardado. */
   refrescarItems: () => Promise<void>
+  /** Vuelve a leer usuarios, clientes, items y mudanzas — para no esperar al aviso de Realtime
+   * cuando la propia pantalla necesita ver de una algo que acaba de guardar (p. ej. una mudanza
+   * recién creada). */
+  refrescarTodo: () => Promise<void>
   /** Dispara el toast al pie de pantalla y lo limpia solo a los 2.6 s, como en el diseño. */
   flash: (mensaje: string) => void
 }
@@ -46,23 +50,23 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  useEffect(() => {
-    async function refrescarDatos() {
-      if (refrescandoRef.current) return
-      refrescandoRef.current = true
-      try {
-        const [usuarios, clientes, items, mudanzas] = await Promise.all([
-          listUsuarios(),
-          listClientes(),
-          listObjetosPrincipales(),
-          listMudanzas(),
-        ])
-        dispatch({ type: 'DATOS_REFRESCADOS', usuarios, clientes, items, mudanzas })
-      } finally {
-        refrescandoRef.current = false
-      }
+  const refrescarDatos = async () => {
+    if (refrescandoRef.current) return
+    refrescandoRef.current = true
+    try {
+      const [usuarios, clientes, items, mudanzas] = await Promise.all([
+        listUsuarios(),
+        listClientes(),
+        listObjetosPrincipales(),
+        listMudanzas(),
+      ])
+      dispatch({ type: 'DATOS_REFRESCADOS', usuarios, clientes, items, mudanzas })
+    } finally {
+      refrescandoRef.current = false
     }
+  }
 
+  useEffect(() => {
     // iOS mantiene la app agregada a inicio "viva" en segundo plano: al volver a primer plano
     // (Safari ↔ ícono instalado, o tras rato sin usarla) se vuelve a leer por si algo cambió
     // mientras tanto y no llegó el aviso de abajo.
@@ -104,7 +108,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AppStateContext.Provider value={{ state, dispatch, refrescarItems, flash }}>
+    <AppStateContext.Provider value={{ state, dispatch, refrescarItems, refrescarTodo: refrescarDatos, flash }}>
       {children}
     </AppStateContext.Provider>
   )

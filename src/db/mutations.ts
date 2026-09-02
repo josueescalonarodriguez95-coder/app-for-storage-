@@ -1,16 +1,25 @@
 import { supabase } from './supabaseClient'
-import { movimientoAFila, objetoAFila } from './mappers'
-import { listClientes, listObjetosPrincipales } from './repo'
-import type { Cliente, MotivoSalida, Movimiento, Objeto, TipoCliente } from './schema'
+import { movimientoAFila, mudanzaAFila, mudanzaObjetoAFila, objetoAFila } from './mappers'
+import { listClientes, listMudanzas, listObjetosPrincipales } from './repo'
+import type { Cliente, MotivoSalida, Movimiento, Mudanza, Objeto, TipoCliente } from './schema'
 
-/** Siguiente número de inventario libre: el mayor RD-#### existente + 1. */
-export async function nextObjetoId(): Promise<string> {
+/** Los siguientes `cantidad` números de inventario libres, en orden: el mayor RD-#### existente
+ * + 1, + 2, etc. Todos de una sola consulta, para poder darle uno a cada unidad de un lote sin
+ * que se repitan (llamar a nextObjetoId() varias veces seguidas devolvería el mismo número las
+ * veces, porque ninguno queda guardado hasta el final). */
+export async function nextObjetoIds(cantidad: number): Promise<string[]> {
   const objetos = await listObjetosPrincipales()
   const maximo = objetos.reduce((max, o) => {
     const n = Number(o.id.replace(/^RD-/, ''))
     return Number.isFinite(n) && n > max ? n : max
   }, 1066)
-  return `RD-${maximo + 1}`
+  return Array.from({ length: cantidad }, (_, i) => `RD-${maximo + 1 + i}`)
+}
+
+/** Siguiente número de inventario libre: el mayor RD-#### existente + 1. */
+export async function nextObjetoId(): Promise<string> {
+  const [id] = await nextObjetoIds(1)
+  return id
 }
 
 function inferirTipoCliente(nombre: string): TipoCliente {
@@ -188,4 +197,99 @@ export async function eliminarObjeto(id: string): Promise<void> {
 export async function desvincularDeMudanza(mudanzaId: string, objetoId: string): Promise<void> {
   const { error } = await supabase.from('mudanza_objetos').delete().eq('mudanza_id', mudanzaId).eq('objeto_id', objetoId)
   if (error) throw error
+}
+
+/** Siguiente código de mudanza libre: el mayor MD-### existente + 1. */
+async function nextMudanzaCodigo(): Promise<string> {
+  const mudanzas = await listMudanzas()
+  const maximo = mudanzas.reduce((max, m) => {
+    const n = Number(m.codigo.replace(/^MD-/, ''))
+    return Number.isFinite(n) && n > max ? n : max
+  }, 204)
+  return `MD-${maximo + 1}`
+}
+
+export interface NuevaMudanza {
+  clienteNombre: string
+  destino: string
+  fecha: string
+  cuadrilla: string
+}
+
+/** Crea una mudanza nueva — cliente, dirección de destino, fecha y cuadrilla; arranca
+ * «Reservado» hasta que se cierre. Devuelve el código para dejarla seleccionada de una. */
+export async function crearMudanza(datos: NuevaMudanza): Promise<string> {
+  const clienteId = await resolverCliente(datos.clienteNombre)
+  const codigo = await nextMudanzaCodigo()
+  const mudanza: Mudanza = {
+    codigo,
+    clienteId,
+    fecha: datos.fecha,
+    destino: datos.destino.trim() || 'Sin dirección',
+    cuadrilla: datos.cuadrilla.trim() || 'Por asignar',
+    estado: 'Reservado',
+  }
+  const { error } = await supabase.from('mudanzas').insert(mudanzaAFila(mudanza))
+  if (error) throw error
+  return codigo
+}
+
+export interface NuevoArticuloMudanza {
+  mudanzaId: string
+  clienteId: string
+  descripcion: string
+  cantidad: number
+  usuarioId: string
+}
+
+/**
+ * Agrega uno o varios artículos iguales a una mudanza (p. ej. "Silla" × 2 al recibirlas):
+ * cada unidad queda como su propio objeto, con su propio historial y su propio QR — así se
+ * puede pegar una etiqueta en cada silla, no una sola etiqueta que diga "2 sillas".
+ */
+export async function agregarArticulosAMudanza(datos: NuevoArticuloMudanza): Promise<Objeto[]> {
+  const cantidad = Math.max(1, Math.round(datos.cantidad) || 1)
+  const ahora = new Date().toISOString()
+  const descripcion = datos.descripcion.trim() || 'Sin describir'
+  const ids = await nextObjetoIds(cantidad)
+
+  const nuevos: Objeto[] = ids.map((id) => ({
+    id,
+    tipo: 'Obra',
+    descripcion,
+    clienteId: datos.clienteId,
+    ubicacion: null,
+    medidas: { largo: null, ancho: null, alto: null },
+    pesoKg: null,
+    fotoUrl: null,
+    estado: 'Reservado',
+    fechaEntrada: ahora,
+    fechaSalida: null,
+    contenedorId: null,
+    ref: null,
+  }))
+
+  const movimientos: Movimiento[] = nuevos.map((o) => ({
+    id: `${o.id}-mov-1`,
+    objetoId: o.id,
+    evento: 'Entrada',
+    fechaHora: ahora,
+    nota: `Recibido para la mudanza ${datos.mudanzaId}`,
+    usuarioId: datos.usuarioId,
+    recibeNombre: null,
+    recibeDoc: null,
+    firmaUrl: null,
+    mudanzaId: datos.mudanzaId,
+  }))
+
+  const vinculos = nuevos.map((o) => ({ mudanzaId: datos.mudanzaId, objetoId: o.id, estadoCarga: 'Pendiente' as const }))
+
+  const { error: e1 } = await supabase.from('objetos').insert(nuevos.map(objetoAFila))
+  if (e1) throw e1
+  const { error: e2 } = await supabase.from('movimientos').insert(movimientos.map(movimientoAFila))
+  if (e2) throw e2
+  const { error: e3 } = await supabase.from('mudanza_objetos').insert(vinculos.map(mudanzaObjetoAFila))
+  if (e3) throw e3
+
+  return nuevos
 }

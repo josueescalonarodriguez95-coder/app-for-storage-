@@ -20,6 +20,7 @@ export type Action =
   | { type: 'SET_CAMPO_ENTRADA'; campos: Partial<CamposEntrada> }
   | { type: 'RESET_ENTRADA' }
   | { type: 'TOGGLE_ETQ_SEL'; id: string }
+  | { type: 'SET_ETQ_SEL'; ids: string[] }
   | { type: 'SET_FORMATO'; formato: FormatoEtiqueta }
   | { type: 'MOSTRAR_TOAST'; toast: string }
   | { type: 'LIMPIAR_TOAST' }
@@ -97,6 +98,8 @@ export function reducer(state: AppState, action: Action): AppState {
           ? state.etqSel.filter((id) => id !== action.id)
           : [...state.etqSel, action.id],
       }
+    case 'SET_ETQ_SEL':
+      return { ...state, etqSel: action.ids }
     case 'SET_FORMATO':
       return { ...state, formato: action.formato }
     case 'MOSTRAR_TOAST':
