@@ -4,6 +4,13 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Por defecto Vite no baja sintaxis moderna (??=, ||=, &&=, campos privados de clase...) que
+  // trae alguna dependencia (p. ej. @supabase/supabase-js) — en un iPad con iOS viejo eso hace
+  // que el navegador ni siquiera pueda interpretar el script y la página queda en blanco, sin
+  // ningún error visible. Bajarlo a un target compatible con Safari 12 evita ese problema.
+  build: {
+    target: ['es2017', 'safari12'],
+  },
   plugins: [
     react(),
     VitePWA({
