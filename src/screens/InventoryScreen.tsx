@@ -90,7 +90,12 @@ export function InventoryScreen() {
   const enMudanzas = state.filtro === 'Mudanzas'
   const itemsMudanzaSel = mudInvSel ? (porMudanza[mudInvSel] ?? []) : []
 
-  const filas = (enMudanzas ? itemsMudanzaSel : state.items)
+  // Todo lo que está vinculado a alguna mudanza se ve aparte, en el filtro "Mudanzas" — que no
+  // salga mezclado en "Todos"/"Obra"/etc., que es sólo para lo que entra normal a la bodega.
+  const idsEnMudanza = new Set(Object.values(porMudanza).flatMap((filas) => filas.map((f) => f.id)))
+  const itemsBodega = state.items.filter((i) => !idsEnMudanza.has(i.id))
+
+  const filas = (enMudanzas ? itemsMudanzaSel : itemsBodega)
     .map((item) => ({ item, cliente: nombreCliente(state.clientes, item.clienteId), ubic: formatUbicacion(item.ubicacion) }))
     .filter(({ item, cliente, ubic }) =>
       enMudanzas ? coincideTexto(item, cliente, ubic, state.query) : coincide(item, cliente, ubic, state.query, state.filtro),
@@ -379,7 +384,7 @@ export function InventoryScreen() {
           </div>
 
           <p style={{ margin: '12px 0 0', fontSize: 13, color: 'var(--color-text-dim)', letterSpacing: '-0.01em' }}>
-            {filas.length} de {enMudanzas ? itemsMudanzaSel.length : state.items.length} registros · sincronizado {formatFecha(new Date().toISOString())}
+            {filas.length} de {enMudanzas ? itemsMudanzaSel.length : itemsBodega.length} registros · sincronizado {formatFecha(new Date().toISOString())}
           </p>
         </>
       )}
