@@ -35,8 +35,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         if (cancelado) return
         dispatch({ type: 'CARGADO_INICIAL', usuarios, clientes, items, mudanzas })
       })
-      .catch(() => {
+      .catch((error) => {
         if (cancelado) return
+        // eslint-disable-next-line no-console
+        console.error('Carga inicial contra Supabase falló:', error)
         dispatch({ type: 'ERROR_CARGA', mensaje: 'No se pudo conectar con la base de datos. Revisá la conexión a internet.' })
       })
     return () => {
