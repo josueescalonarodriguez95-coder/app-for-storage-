@@ -1,7 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 
-const url = import.meta.env.VITE_SUPABASE_URL
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+// .trim() por si al pegar el valor en Vercel quedó un espacio o salto de línea de más al
+// principio o al final — eso rompe silenciosamente el header Authorization más adelante.
+const url = import.meta.env.VITE_SUPABASE_URL?.trim()
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
 
 if (!url || !anonKey) {
   throw new Error(
