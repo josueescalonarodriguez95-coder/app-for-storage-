@@ -176,7 +176,7 @@ export function CheckOutScreen() {
                       <span style={{ fontSize: 13, color: 'var(--color-text-dim)', fontVariantNumeric: 'tabular-nums' }}>{disponibles} en bodega</span>
                     </div>
                     <div style={{ fontSize: 14, color: 'var(--color-text-secondary)', letterSpacing: '-0.015em', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {nombreCliente(state.clientes, m.clienteId)} · {m.destino}
+                      {nombreCliente(state.clientes, m.clienteId)} · {m.origen} → {m.destino}
                     </div>
                   </button>
                 )
@@ -289,7 +289,7 @@ export function CheckOutScreen() {
                       </span>
                       <span style={{ fontSize: 15, fontWeight: 640, width: 88, flex: 'none', letterSpacing: '-0.02em' }}>{m.codigo}</span>
                       <span style={{ fontSize: 15, flex: 1, letterSpacing: '-0.015em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {nombreCliente(state.clientes, m.clienteId)} · {m.destino}
+                        {nombreCliente(state.clientes, m.clienteId)} · {m.origen} → {m.destino}
                       </span>
                       <span style={{ fontSize: 13, opacity: 0.7 }}>{formatFecha(m.fecha)}</span>
                     </button>

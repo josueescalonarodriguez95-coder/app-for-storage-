@@ -198,9 +198,9 @@ export function construirObjetosYMovimientos(): { objetos: Objeto[]; movimientos
 }
 
 export const MUDANZAS: Mudanza[] = [
-  { codigo: 'MD-201', clienteId: 'cli-serra', fecha: '2026-08-30', destino: 'Sala 3, Fundación Serra', cuadrilla: '4 personas · camión 7t', estado: 'En tránsito' },
-  { codigo: 'MD-204', clienteId: 'cli-arreola', fecha: '2026-09-03', destino: 'Residencia Lomas, planta baja', cuadrilla: '3 personas · camioneta', estado: 'Reservado' },
-  { codigo: 'MD-198', clienteId: 'cli-bellas-artes', fecha: '2026-08-21', destino: 'Bodega Norte', cuadrilla: '5 personas · camión 12t', estado: 'Cerrada' },
+  { codigo: 'MD-201', clienteId: 'cli-serra', fecha: '2026-08-30', tipo: 'Traslado', origen: 'Bodega Ramos', destino: 'Sala 3, Fundación Serra', cuadrilla: '4 personas · camión 7t', estado: 'En tránsito' },
+  { codigo: 'MD-204', clienteId: 'cli-arreola', fecha: '2026-09-03', tipo: 'Traslado', origen: 'Bodega Ramos', destino: 'Residencia Lomas, planta baja', cuadrilla: '3 personas · camioneta', estado: 'Reservado' },
+  { codigo: 'MD-198', clienteId: 'cli-bellas-artes', fecha: '2026-08-21', tipo: 'A bodega', origen: 'Museo Bellas Artes, salón principal', destino: 'Bodega Ramos', cuadrilla: '5 personas · camión 12t', estado: 'Cerrada' },
 ]
 
 export const MUDANZA_OBJETOS: MudanzaObjeto[] = [

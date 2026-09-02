@@ -6,6 +6,9 @@
 export type TipoObjeto = 'Guacal' | 'Obra' | 'Pedestal' | 'Escultura'
 export type EstadoObjeto = 'En bodega' | 'Fuera' | 'Reservado' | 'En tránsito'
 export type EstadoMudanza = 'Reservado' | 'En tránsito' | 'Cerrada'
+/** Traslado: recoger en una dirección y llevar a otra, ninguna es la bodega. A bodega: recoger
+ * en una dirección y traerlo al almacén de Ramos (destino queda fijo en "Bodega Ramos"). */
+export type TipoMudanza = 'Traslado' | 'A bodega'
 export type EstadoCarga = 'Pendiente' | 'Cargado' | 'Devuelto'
 export type EventoMovimiento = 'Entrada' | 'Ubicado' | 'Inspección' | 'Reservado' | 'Salida' | 'Devolución'
 export type RolUsuario = 'bodega' | 'admin'
@@ -84,6 +87,10 @@ export interface Mudanza {
   clienteId: string
   /** ISO 8601 */
   fecha: string
+  tipo: TipoMudanza
+  /** Dirección donde se recoge. */
+  origen: string
+  /** Dirección donde se entrega — "Bodega Ramos" cuando tipo es "A bodega". */
   destino: string
   cuadrilla: string
   estado: EstadoMudanza

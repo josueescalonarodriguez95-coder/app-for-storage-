@@ -55,10 +55,16 @@ create table if not exists mudanzas (
   codigo text primary key,
   cliente_id text not null references clientes(id),
   fecha timestamptz not null,
+  tipo text not null default 'Traslado',
+  origen text not null default '',
   destino text not null,
   cuadrilla text not null,
   estado text not null
 );
+-- Por si la tabla ya existía de antes de agregar tipo/origen (columnas nuevas): re-correr este
+-- archivo en una base ya creada no falla, sólo agrega lo que falte.
+alter table mudanzas add column if not exists tipo text not null default 'Traslado';
+alter table mudanzas add column if not exists origen text not null default '';
 
 create table if not exists mudanza_objetos (
   mudanza_id text not null references mudanzas(codigo),

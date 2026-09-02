@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react'
 import { DataCard } from '../components/ui/DataCard'
 import { EstadoMudanzaBadge } from '../components/ui/Badge'
 import { QrCode } from '../components/ui/QrCode'
+import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { agregarArticulosAMudanza, crearMudanza, eliminarMudanza, eliminarObjeto } from '../db/mutations'
 import { listObjetosDeMudanza } from '../db/repo'
-import type { Objeto } from '../db/schema'
+import type { Objeto, TipoMudanza } from '../db/schema'
 import { useAppState } from '../state/AppStateContext'
 import { nombreCliente } from '../state/selectors'
 import { formatFecha } from '../utils/fecha'
+
+const TIPOS_MUDANZA: TipoMudanza[] = ['Traslado', 'A bodega']
 
 function hoyISO(): string {
   return new Date().toISOString().slice(0, 10)
@@ -56,7 +59,9 @@ export function MovesScreen() {
   const [porMudanza, setPorMudanza] = useState<Record<string, Objeto[]>>({})
 
   const [creando, setCreando] = useState(false)
+  const [nuevoTipo, setNuevoTipo] = useState<TipoMudanza>('Traslado')
   const [nuevoCliente, setNuevoCliente] = useState('')
+  const [nuevoOrigen, setNuevoOrigen] = useState('')
   const [nuevoDestino, setNuevoDestino] = useState('')
   const [nuevaFecha, setNuevaFecha] = useState(hoyISO())
   const [nuevaCuadrilla, setNuevaCuadrilla] = useState('')
@@ -98,7 +103,9 @@ export function MovesScreen() {
 
   const cancelarNueva = () => {
     setCreando(false)
+    setNuevoTipo('Traslado')
     setNuevoCliente('')
+    setNuevoOrigen('')
     setNuevoDestino('')
     setNuevaCuadrilla('')
     setNuevaFecha(hoyISO())
@@ -109,10 +116,16 @@ export function MovesScreen() {
       flash('Falta el nombre del cliente')
       return
     }
+    if (!nuevoOrigen.trim()) {
+      flash('Falta la dirección donde se recoge')
+      return
+    }
     setGuardandoMudanza(true)
     try {
       const codigo = await crearMudanza({
         clienteNombre: nuevoCliente,
+        tipo: nuevoTipo,
+        origen: nuevoOrigen,
         destino: nuevoDestino,
         fecha: nuevaFecha,
         cuadrilla: nuevaCuadrilla,
@@ -244,8 +257,20 @@ export function MovesScreen() {
                   <span style={{ fontSize: 17, fontWeight: 680, letterSpacing: '-0.025em' }}>{m.codigo}</span>
                   <span style={{ fontSize: 13, opacity: 0.65, fontVariantNumeric: 'tabular-nums' }}>{formatFecha(m.fecha)}</span>
                 </div>
-                <div style={{ fontSize: 15, letterSpacing: '-0.015em', marginTop: 3 }}>{nombreCliente(state.clientes, m.clienteId)}</div>
-                <div style={{ fontSize: 13, opacity: 0.62, marginTop: 5 }}>{filas.length} artículo(s)</div>
+                <div style={{ fontSize: 15, letterSpacing: '-0.015em', marginTop: 3 }}>{nombreCliente(state.clientes, m.clienteId)} · {m.tipo}</div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    opacity: 0.62,
+                    marginTop: 4,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {m.origen} → {m.destino}
+                </div>
+                <div style={{ fontSize: 13, opacity: 0.62, marginTop: 3 }}>{filas.length} artículo(s)</div>
               </button>
             )
           })}
@@ -257,8 +282,20 @@ export function MovesScreen() {
           <>
             <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.03em', marginBottom: 16 }}>Nueva mudanza</div>
             <div style={{ maxWidth: 480, borderRadius: 'var(--radius-card)', background: 'var(--color-card-surface)', boxShadow: 'var(--shadow-card-strong)', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '13px 18px', borderBottom: '.5px solid var(--color-hairline-strong)' }}>
+                <span style={{ width: 120, flex: 'none', fontSize: 15, color: 'var(--color-text-secondary)', letterSpacing: '-0.015em' }}>Tipo</span>
+                <SegmentedControl options={TIPOS_MUDANZA} value={nuevoTipo} onChange={setNuevoTipo} />
+              </div>
               <CampoTexto etiqueta="Cliente" value={nuevoCliente} onChange={setNuevoCliente} placeholder="Nombre del cliente" />
-              <CampoTexto etiqueta="Dirección" value={nuevoDestino} onChange={setNuevoDestino} placeholder="Destino de la mudanza" />
+              <CampoTexto etiqueta="Origen" value={nuevoOrigen} onChange={setNuevoOrigen} placeholder="Dirección donde se recoge" />
+              {nuevoTipo === 'Traslado' ? (
+                <CampoTexto etiqueta="Destino" value={nuevoDestino} onChange={setNuevoDestino} placeholder="Dirección donde se entrega" />
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '13px 18px', borderBottom: '.5px solid var(--color-hairline-strong)' }}>
+                  <span style={{ width: 120, flex: 'none', fontSize: 15, color: 'var(--color-text-secondary)', letterSpacing: '-0.015em' }}>Destino</span>
+                  <span style={{ fontSize: 16, letterSpacing: '-0.015em', color: 'var(--color-text-dim)' }}>Bodega Ramos</span>
+                </div>
+              )}
               <CampoTexto etiqueta="Fecha" value={nuevaFecha} onChange={setNuevaFecha} type="date" />
               <CampoTexto etiqueta="Cuadrilla" value={nuevaCuadrilla} onChange={setNuevaCuadrilla} placeholder="Ej. 3 personas · camioneta" />
             </div>
@@ -303,11 +340,12 @@ export function MovesScreen() {
               <EstadoMudanzaBadge estado={mud.estado} size="lg" />
             </div>
             <div style={{ fontSize: 16, color: 'var(--color-text-secondary)', letterSpacing: '-0.015em', margin: '5px 0 16px' }}>
-              {nombreCliente(state.clientes, mud.clienteId)}
+              {nombreCliente(state.clientes, mud.clienteId)} · {mud.tipo}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
               <DataCard etiqueta="Fecha" valor={formatFecha(mud.fecha)} />
+              <DataCard etiqueta="Origen" valor={mud.origen} />
               <DataCard etiqueta="Destino" valor={mud.destino} />
               <DataCard etiqueta="Cuadrilla" valor={mud.cuadrilla} />
             </div>

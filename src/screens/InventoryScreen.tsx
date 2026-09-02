@@ -271,7 +271,7 @@ export function InventoryScreen() {
                   {m.codigo} · {nombreCliente(state.clientes, m.clienteId)}
                 </span>
                 <span style={{ fontSize: 13, color: 'var(--color-text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {m.destino}
+                  {m.origen} → {m.destino}
                 </span>
               </span>
               <span style={{ fontSize: 13, color: 'var(--color-text-dim)', flex: 'none', textAlign: 'right' }}>

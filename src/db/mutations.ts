@@ -1,7 +1,7 @@
 import { supabase } from './supabaseClient'
 import { movimientoAFila, mudanzaAFila, mudanzaObjetoAFila, objetoAFila } from './mappers'
 import { listClientes, listMudanzas, listObjetosDeMudanza, listObjetosPrincipales } from './repo'
-import type { Cliente, MotivoSalida, Movimiento, Mudanza, Objeto, TipoCliente } from './schema'
+import type { Cliente, MotivoSalida, Movimiento, Mudanza, Objeto, TipoCliente, TipoMudanza } from './schema'
 
 /** Los siguientes `cantidad` números de inventario libres, en orden: el mayor RD-#### existente
  * + 1, + 2, etc. Todos de una sola consulta, para poder darle uno a cada unidad de un lote sin
@@ -211,13 +211,17 @@ async function nextMudanzaCodigo(): Promise<string> {
 
 export interface NuevaMudanza {
   clienteNombre: string
+  tipo: TipoMudanza
+  origen: string
+  /** Ignorado cuando tipo es "A bodega" — el destino queda fijo en "Bodega Ramos". */
   destino: string
   fecha: string
   cuadrilla: string
 }
 
-/** Crea una mudanza nueva — cliente, dirección de destino, fecha y cuadrilla; arranca
- * «Reservado» hasta que se cierre. Devuelve el código para dejarla seleccionada de una. */
+/** Crea una mudanza nueva — cliente, tipo (traslado entre dos direcciones, o recolección hacia
+ * la bodega), origen, destino, fecha y cuadrilla; arranca «Reservado» hasta que se cierre.
+ * Devuelve el código para dejarla seleccionada de una. */
 export async function crearMudanza(datos: NuevaMudanza): Promise<string> {
   const clienteId = await resolverCliente(datos.clienteNombre)
   const codigo = await nextMudanzaCodigo()
@@ -225,7 +229,9 @@ export async function crearMudanza(datos: NuevaMudanza): Promise<string> {
     codigo,
     clienteId,
     fecha: datos.fecha,
-    destino: datos.destino.trim() || 'Sin dirección',
+    tipo: datos.tipo,
+    origen: datos.origen.trim() || 'Sin dirección',
+    destino: datos.tipo === 'A bodega' ? 'Bodega Ramos' : datos.destino.trim() || 'Sin dirección',
     cuadrilla: datos.cuadrilla.trim() || 'Por asignar',
     estado: 'Reservado',
   }
