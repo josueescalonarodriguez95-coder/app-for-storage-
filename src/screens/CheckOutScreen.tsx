@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DataCard } from '../components/ui/DataCard'
 import { EstadoObjetoBadge } from '../components/ui/Badge'
 import { NavIcon } from '../components/layout/Icons'
@@ -6,24 +6,64 @@ import { SearchField } from '../components/ui/SearchField'
 import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { SignaturePad } from '../components/ui/SignaturePad'
 import { confirmarSalida } from '../db/mutations'
-import type { MotivoSalida } from '../db/schema'
+import { listObjetosDeMudanza } from '../db/repo'
+import type { MotivoSalida, Objeto } from '../db/schema'
 import { useAppState } from '../state/AppStateContext'
 import { nombreCliente } from '../state/selectors'
 import { formatFecha } from '../utils/fecha'
 import { formatMedidas, formatPeso, formatUbicacion } from '../utils/formato'
 
 const MOTIVOS: MotivoSalida[] = ['Mudanza', 'Devolución', 'Exhibición']
+const ORIGENES_SALIDA = ['Bodega', 'Mudanzas'] as const
+type OrigenSalida = (typeof ORIGENES_SALIDA)[number]
 
 export function CheckOutScreen() {
   const { state, dispatch, flash, refrescarItems } = useAppState()
   const [recibe, setRecibe] = useState('')
   const [doc, setDoc] = useState('')
   const [firmaUrl, setFirmaUrl] = useState<string | null>(null)
+  const [origenSalida, setOrigenSalida] = useState<OrigenSalida>('Bodega')
+  const [mudSalidaSel, setMudSalidaSel] = useState<string | null>(null)
+  const [porMudanza, setPorMudanza] = useState<Record<string, Objeto[]>>({})
+
+  useEffect(() => {
+    let cancelado = false
+    Promise.all(
+      state.mudanzas.map(async (m) => {
+        const filas = await listObjetosDeMudanza(m.codigo)
+        return [m.codigo, filas.map((f) => f.objeto)] as const
+      }),
+    )
+      .then((entradas) => {
+        if (!cancelado) setPorMudanza(Object.fromEntries(entradas))
+      })
+      .catch(() => {
+        if (!cancelado) setPorMudanza({})
+      })
+    return () => {
+      cancelado = true
+    }
+  }, [state.mudanzas])
+
+  const cambiarOrigenSalida = (v: OrigenSalida) => {
+    setOrigenSalida(v)
+    setMudSalidaSel(null)
+  }
+
+  // Todo lo que está vinculado a alguna mudanza queda fuera de la lista de la bodega normal —
+  // sus salidas se dan aparte, eligiendo primero la mudanza (README ampliado).
+  const idsEnMudanza = new Set(Object.values(porMudanza).flatMap((filas) => filas.map((f) => f.id)))
 
   const q = state.query.trim().toLowerCase()
-  const enBodega = state.items.filter(
-    (i) => i.estado !== 'Fuera' && (q === '' || `${i.id} ${i.descripcion} ${i.ubicacion ? formatUbicacion(i.ubicacion) : ''}`.toLowerCase().includes(q)),
-  )
+  const coincideQuery = (i: Objeto) =>
+    q === '' || `${i.id} ${i.descripcion} ${i.ubicacion ? formatUbicacion(i.ubicacion) : ''}`.toLowerCase().includes(q)
+
+  const enBodega = state.items.filter((i) => i.estado !== 'Fuera' && !idsEnMudanza.has(i.id) && coincideQuery(i))
+
+  const itemsMudanzaSel = mudSalidaSel ? (porMudanza[mudSalidaSel] ?? []).filter((i) => i.estado !== 'Fuera') : []
+  const listaMudanzaFiltrada = itemsMudanzaSel.filter(coincideQuery)
+
+  const listaAMostrar = origenSalida === 'Bodega' ? enBodega : listaMudanzaFiltrada
 
   const out = state.items.find((i) => i.id === state.outId) ?? null
 
@@ -60,6 +100,7 @@ export function CheckOutScreen() {
   return (
     <div style={{ display: 'flex', height: '100%', minHeight: 0 }}>
       <div style={{ width: 'var(--width-salida-list)', flex: 'none', padding: 16, display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}>
+        <SegmentedControl options={ORIGENES_SALIDA} value={origenSalida} onChange={cambiarOrigenSalida} />
         <div style={{ display: 'flex', gap: 8 }}>
           <SearchField value={state.query} onChange={(query) => dispatch({ type: 'SET_QUERY', query })} placeholder="Buscar por número, descripción…" />
           <button
@@ -82,33 +123,98 @@ export function CheckOutScreen() {
             <NavIcon name="scan" color="var(--color-accent)" size={19} />
           </button>
         </div>
+
+        {origenSalida === 'Mudanzas' && mudSalidaSel && (
+          <button
+            className="boton-cristal"
+            onClick={() => setMudSalidaSel(null)}
+            style={{
+              appearance: 'none',
+              border: 0,
+              cursor: 'pointer',
+              alignSelf: 'flex-start',
+              minHeight: 32,
+              padding: '0 12px',
+              borderRadius: 10,
+              fontFamily: 'inherit',
+              fontSize: 13,
+              fontWeight: 560,
+              color: 'var(--color-accent)',
+            }}
+          >
+            ‹ {mudSalidaSel} · {nombreCliente(state.clientes, state.mudanzas.find((m) => m.codigo === mudSalidaSel)?.clienteId ?? '')}
+          </button>
+        )}
+
         <div style={{ flex: 1, minHeight: 0, overflow: 'auto', borderRadius: 'var(--radius-card)', background: 'var(--color-card-surface-strong)', boxShadow: 'var(--shadow-card-strong)' }}>
-          {enBodega.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => dispatch({ type: 'SET_OUT_ID', outId: item.id })}
-              style={{
-                appearance: 'none',
-                border: 0,
-                cursor: 'pointer',
-                display: 'block',
-                width: '100%',
-                textAlign: 'left',
-                padding: '13px 16px',
-                borderBottom: '.5px solid var(--color-hairline)',
-                fontFamily: 'inherit',
-                background: state.outId === item.id ? 'rgba(224,71,47,.1)' : 'transparent',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline' }}>
-                <span style={{ fontSize: 16, fontWeight: 640, letterSpacing: '-0.02em' }}>{item.id}</span>
-                <span style={{ fontSize: 13, color: 'var(--color-text-dim)', fontVariantNumeric: 'tabular-nums' }}>{formatUbicacion(item.ubicacion)}</span>
-              </div>
-              <div style={{ fontSize: 14, color: 'var(--color-text-secondary)', letterSpacing: '-0.015em', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {item.descripcion}
-              </div>
-            </button>
-          ))}
+          {origenSalida === 'Mudanzas' && !mudSalidaSel ? (
+            <>
+              {state.mudanzas.length === 0 && (
+                <p style={{ margin: 0, padding: 16, fontSize: 13, color: 'var(--color-text-dim)' }}>Todavía no hay mudanzas registradas.</p>
+              )}
+              {state.mudanzas.map((m) => {
+                const disponibles = (porMudanza[m.codigo] ?? []).filter((i) => i.estado !== 'Fuera').length
+                return (
+                  <button
+                    key={m.codigo}
+                    onClick={() => setMudSalidaSel(m.codigo)}
+                    style={{
+                      appearance: 'none',
+                      border: 0,
+                      cursor: 'pointer',
+                      display: 'block',
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '13px 16px',
+                      borderBottom: '.5px solid var(--color-hairline)',
+                      fontFamily: 'inherit',
+                      background: 'transparent',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline' }}>
+                      <span style={{ fontSize: 16, fontWeight: 640, letterSpacing: '-0.02em' }}>{m.codigo}</span>
+                      <span style={{ fontSize: 13, color: 'var(--color-text-dim)', fontVariantNumeric: 'tabular-nums' }}>{disponibles} en bodega</span>
+                    </div>
+                    <div style={{ fontSize: 14, color: 'var(--color-text-secondary)', letterSpacing: '-0.015em', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {nombreCliente(state.clientes, m.clienteId)} · {m.destino}
+                    </div>
+                  </button>
+                )
+              })}
+            </>
+          ) : (
+            <>
+              {listaAMostrar.length === 0 && (
+                <p style={{ margin: 0, padding: 16, fontSize: 13, color: 'var(--color-text-dim)' }}>No hay artículos disponibles acá.</p>
+              )}
+              {listaAMostrar.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => dispatch({ type: 'SET_OUT_ID', outId: item.id })}
+                  style={{
+                    appearance: 'none',
+                    border: 0,
+                    cursor: 'pointer',
+                    display: 'block',
+                    width: '100%',
+                    textAlign: 'left',
+                    padding: '13px 16px',
+                    borderBottom: '.5px solid var(--color-hairline)',
+                    fontFamily: 'inherit',
+                    background: state.outId === item.id ? 'rgba(224,71,47,.1)' : 'transparent',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline' }}>
+                    <span style={{ fontSize: 16, fontWeight: 640, letterSpacing: '-0.02em' }}>{item.id}</span>
+                    <span style={{ fontSize: 13, color: 'var(--color-text-dim)', fontVariantNumeric: 'tabular-nums' }}>{formatUbicacion(item.ubicacion)}</span>
+                  </div>
+                  <div style={{ fontSize: 14, color: 'var(--color-text-secondary)', letterSpacing: '-0.015em', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {item.descripcion}
+                  </div>
+                </button>
+              ))}
+            </>
+          )}
         </div>
       </div>
 

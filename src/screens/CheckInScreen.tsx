@@ -6,7 +6,7 @@ import type { TipoObjeto } from '../db/schema'
 import { useAppState } from '../state/AppStateContext'
 import { subirFoto } from '../utils/imagen'
 
-const TIPOS: TipoObjeto[] = ['Guacal', 'Obra', 'Pedestal', 'Vitrina']
+const TIPOS: TipoObjeto[] = ['Guacal', 'Obra', 'Pedestal', 'Escultura']
 const NAVES = ['N1', 'N2', 'N3']
 
 function CampoTexto({

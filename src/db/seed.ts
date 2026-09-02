@@ -93,7 +93,7 @@ const OBJETOS_SEED: ObjetoSeed[] = [
     ],
   },
   {
-    id: 'RD-1055', tipo: 'Vitrina', descripcion: 'Vitrina de cristal templado con base',
+    id: 'RD-1055', tipo: 'Escultura', descripcion: 'Escultura de bronce con vitrina de cristal templado',
     clienteId: 'cli-bellas-artes', ubic: ['N1', 'R07', 'A2'], entrada: '2026-08-22', salida: null,
     dims: [120, 60, 190], pesoKg: 96, estado: 'En bodega',
     hist: [

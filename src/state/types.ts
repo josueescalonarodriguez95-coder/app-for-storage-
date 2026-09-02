@@ -6,7 +6,12 @@ import type { Cliente, Mudanza, MotivoSalida, Objeto, TipoObjeto, Usuario } from
 
 export type Screen = 'scan' | 'inv' | 'entrada' | 'salida' | 'detalle' | 'mud' | 'etq'
 
-export type Filtro = 'Todos' | 'En bodega' | 'Fuera' | Extract<TipoObjeto, 'Guacal' | 'Obra' | 'Pedestal'>
+export type Filtro =
+  | 'Todos'
+  | 'En bodega'
+  | 'Fuera'
+  | Extract<TipoObjeto, 'Guacal' | 'Obra' | 'Pedestal' | 'Escultura'>
+  | 'Mudanzas'
 
 export interface PiezaFormulario {
   ref: string

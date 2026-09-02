@@ -3,7 +3,7 @@
   Fuente: design_handoff_storage_control/README.md, sección "Modelo de datos sugerido".
 */
 
-export type TipoObjeto = 'Guacal' | 'Obra' | 'Pedestal' | 'Vitrina'
+export type TipoObjeto = 'Guacal' | 'Obra' | 'Pedestal' | 'Escultura'
 export type EstadoObjeto = 'En bodega' | 'Fuera' | 'Reservado' | 'En tránsito'
 export type EstadoMudanza = 'Reservado' | 'En tránsito' | 'Cerrada'
 export type EstadoCarga = 'Pendiente' | 'Cargado' | 'Devuelto'
