@@ -293,8 +293,8 @@ export function LabelsScreen() {
                   >
                     <QrCode value={item.id} size={28} />
                     <span style={{ width: 90, flex: 'none', fontSize: 14, fontWeight: 680, letterSpacing: '-0.02em' }}>{item.id}</span>
-                    <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--color-text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {nombreCliente(state.clientes, item.clienteId)}
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.descripcion} <span style={{ color: 'var(--color-text-tertiary)' }}>· {nombreCliente(state.clientes, item.clienteId)}</span>
                     </span>
                     <span style={{ width: 100, flex: 'none', fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatUbicacion(item.ubicacion)}</span>
                     <span style={{ width: 130, flex: 'none', fontSize: 12, color: 'var(--color-text-dim)', textAlign: 'right' }}>Ramos · {formatFecha(item.fechaEntrada)}</span>
@@ -332,6 +332,9 @@ export function LabelsScreen() {
                     <QrCode value={item.id} size={a.qr} />
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: a.id, fontWeight: 680, letterSpacing: '-0.025em' }}>{item.id}</div>
+                      <div style={{ fontSize: a.meta + 1, fontWeight: 600, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {item.descripcion}
+                      </div>
                       <div style={{ fontSize: a.meta, color: 'var(--color-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {nombreCliente(state.clientes, item.clienteId)}
                       </div>
