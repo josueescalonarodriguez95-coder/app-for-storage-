@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient'
 import { movimientoAFila, mudanzaAFila, mudanzaObjetoAFila, objetoAFila } from './mappers'
-import { listClientes, listMudanzas, listObjetosPrincipales } from './repo'
+import { listClientes, listMudanzas, listObjetosDeMudanza, listObjetosPrincipales } from './repo'
 import type { Cliente, MotivoSalida, Movimiento, Mudanza, Objeto, TipoCliente } from './schema'
 
 /** Los siguientes `cantidad` números de inventario libres, en orden: el mayor RD-#### existente
@@ -292,4 +292,16 @@ export async function agregarArticulosAMudanza(datos: NuevoArticuloMudanza): Pro
   if (e3) throw e3
 
   return nuevos
+}
+
+/**
+ * Borra una mudanza por error, junto con todos sus artículos (cada uno con su propio borrado
+ * en cascada — historial y vínculo incluidos). No se puede dejar la mudanza a medio borrar con
+ * artículos sueltos flotando sin adónde ir, así que se borra todo junto.
+ */
+export async function eliminarMudanza(codigo: string): Promise<void> {
+  const vinculados = await listObjetosDeMudanza(codigo)
+  await Promise.all(vinculados.map((v) => eliminarObjeto(v.objeto.id)))
+  const { error } = await supabase.from('mudanzas').delete().eq('codigo', codigo)
+  if (error) throw error
 }

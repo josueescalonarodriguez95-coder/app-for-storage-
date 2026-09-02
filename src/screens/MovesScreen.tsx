@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { DataCard } from '../components/ui/DataCard'
 import { EstadoMudanzaBadge } from '../components/ui/Badge'
 import { QrCode } from '../components/ui/QrCode'
-import { agregarArticulosAMudanza, crearMudanza, eliminarObjeto } from '../db/mutations'
+import { agregarArticulosAMudanza, crearMudanza, eliminarMudanza, eliminarObjeto } from '../db/mutations'
 import { listObjetosDeMudanza } from '../db/repo'
 import type { Objeto } from '../db/schema'
 import { useAppState } from '../state/AppStateContext'
@@ -65,6 +65,7 @@ export function MovesScreen() {
   const [descArticulo, setDescArticulo] = useState('')
   const [cantArticulo, setCantArticulo] = useState('1')
   const [agregando, setAgregando] = useState(false)
+  const [borrandoMudanza, setBorrandoMudanza] = useState(false)
 
   const mud = state.mudanzas.find((m) => m.codigo === state.mudSel) ?? null
   const articulos = mud ? (porMudanza[mud.codigo] ?? []) : []
@@ -166,6 +167,25 @@ export function MovesScreen() {
   const imprimirEtiquetas = () => {
     dispatch({ type: 'SET_ETQ_SEL', ids: articulos.map((a) => a.id) })
     dispatch({ type: 'IR_A', screen: 'etq' })
+  }
+
+  const borrarMudanza = async () => {
+    if (!mud) return
+    const confirmado = window.confirm(
+      `¿Eliminar ${mud.codigo} y sus ${articulos.length} artículo(s)? Esta acción no se puede deshacer.`,
+    )
+    if (!confirmado) return
+    setBorrandoMudanza(true)
+    try {
+      await eliminarMudanza(mud.codigo)
+      await refrescarTodo()
+      dispatch({ type: 'SET_MUD_SEL', mudSel: null })
+      flash(`${mud.codigo} eliminada`)
+    } catch {
+      flash('No se pudo eliminar — revisá la conexión e intentá de nuevo')
+    } finally {
+      setBorrandoMudanza(false)
+    }
   }
 
   return (
@@ -396,9 +416,27 @@ export function MovesScreen() {
               ))}
             </div>
 
-            <p style={{ margin: '12px 0 0', fontSize: 13, color: 'var(--color-text-dim)', letterSpacing: '-0.01em' }}>
-              {articulos.length} artículo(s) recibido(s) en total
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, margin: '12px 0 0' }}>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text-dim)', letterSpacing: '-0.01em' }}>
+                {articulos.length} artículo(s) recibido(s) en total
+              </p>
+              <button
+                onClick={borrarMudanza}
+                disabled={borrandoMudanza}
+                style={{
+                  appearance: 'none',
+                  border: 0,
+                  background: 'transparent',
+                  cursor: borrandoMudanza ? 'default' : 'pointer',
+                  padding: '4px 0',
+                  fontFamily: 'inherit',
+                  fontSize: 13,
+                  color: 'var(--color-text-dim)',
+                }}
+              >
+                {borrandoMudanza ? 'Eliminando mudanza…' : 'Eliminar mudanza'}
+              </button>
+            </div>
           </>
         )}
       </div>

@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { QrCode } from '../components/ui/QrCode'
 import { SegmentedControl } from '../components/ui/SegmentedControl'
+import { listObjetosDeMudanza } from '../db/repo'
 import { useAppState } from '../state/AppStateContext'
 import { nombreCliente } from '../state/selectors'
 import type { FormatoEtiqueta } from '../state/types'
@@ -12,6 +13,8 @@ import { guardarTamanoTarjeta, leerTamanoTarjeta, type TamanoTarjeta } from '../
 
 const FORMATOS: FormatoEtiqueta[] = ['60 × 40 mm', '100 × 70 mm', 'A4 · 12 por hoja']
 const TAMANOS: TamanoTarjeta[] = ['Grande', 'Mediano', 'Pequeño', 'Lista']
+const ORIGENES = ['Bodega', 'Mudanzas'] as const
+type Origen = (typeof ORIGENES)[number]
 
 /** Ancho mínimo de columna (el grid se reacomoda solo, como los íconos de una carpeta) y
  * tamaños de fuente/QR por densidad — para que la cuadrícula nunca se salga de la pantalla,
@@ -99,11 +102,69 @@ export function LabelsScreen() {
   const pagina = PAGINA_POR_FORMATO[state.formato]
   const esGrid = state.formato === 'A4 · 12 por hoja'
   const [tamano, setTamano] = useState<TamanoTarjeta>(() => leerTamanoTarjeta())
+  const [origen, setOrigen] = useState<Origen>('Bodega')
+  const [clienteSel, setClienteSel] = useState<string | null>(null)
+  const [porMudanza, setPorMudanza] = useState<Record<string, Objeto[]>>({})
+
+  useEffect(() => {
+    let cancelado = false
+    Promise.all(
+      state.mudanzas.map(async (m) => {
+        const filas = await listObjetosDeMudanza(m.codigo)
+        return [m.codigo, filas.map((f) => f.objeto)] as const
+      }),
+    )
+      .then((entradas) => {
+        if (!cancelado) setPorMudanza(Object.fromEntries(entradas))
+      })
+      .catch(() => {
+        if (!cancelado) setPorMudanza({})
+      })
+    return () => {
+      cancelado = true
+    }
+  }, [state.mudanzas])
 
   const cambiarTamano = (v: TamanoTarjeta) => {
     setTamano(v)
     guardarTamanoTarjeta(v)
   }
+
+  const cambiarOrigen = (v: Origen) => {
+    setOrigen(v)
+    setClienteSel(null)
+  }
+
+  // Todo lo que está vinculado a alguna mudanza, para separarlo de lo que entra normal a la
+  // bodega (README ampliado: "que estén separadas de las de los artículos que entran en la
+  // bodega").
+  const idsEnMudanza = new Set(Object.values(porMudanza).flatMap((filas) => filas.map((f) => f.id)))
+  const itemsBodega = state.items.filter((i) => !idsEnMudanza.has(i.id))
+
+  // Un cliente por cada mudanza que tenga al menos un artículo, en orden alfabético.
+  const clientesConMudanza = Object.entries(porMudanza)
+    .filter(([, filas]) => filas.length > 0)
+    .reduce<{ clienteId: string; nombre: string; articulos: number; mudanzas: number }[]>((acc, [codigo, filas]) => {
+      const mud = state.mudanzas.find((m) => m.codigo === codigo)
+      if (!mud) return acc
+      const existente = acc.find((c) => c.clienteId === mud.clienteId)
+      if (existente) {
+        existente.articulos += filas.length
+        existente.mudanzas += 1
+      } else {
+        acc.push({ clienteId: mud.clienteId, nombre: nombreCliente(state.clientes, mud.clienteId), articulos: filas.length, mudanzas: 1 })
+      }
+      return acc
+    }, [])
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+
+  const itemsDelCliente = clienteSel
+    ? Object.entries(porMudanza)
+        .filter(([codigo]) => state.mudanzas.find((m) => m.codigo === codigo)?.clienteId === clienteSel)
+        .flatMap(([, filas]) => filas)
+    : []
+
+  const itemsAMostrar = origen === 'Bodega' ? itemsBodega : itemsDelCliente
 
   const imprimir = () => {
     flash(`${state.etqSel.length} etiquetas enviadas a la impresora de muelle`)
@@ -114,6 +175,7 @@ export function LabelsScreen() {
     <div style={{ padding: '18px 26px 30px' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 16 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
+          <SegmentedControl options={ORIGENES} value={origen} onChange={cambiarOrigen} />
           <SegmentedControl options={FORMATOS} value={state.formato} onChange={(formato) => dispatch({ type: 'SET_FORMATO', formato })} />
           <SegmentedControl options={TAMANOS} value={tamano} onChange={cambiarTamano} />
         </div>
@@ -146,79 +208,142 @@ export function LabelsScreen() {
         </div>
       </div>
 
-      {tamano === 'Lista' ? (
+      {origen === 'Mudanzas' && !clienteSel ? (
         <div style={{ borderRadius: 'var(--radius-card)', background: 'var(--color-card-surface-strong)', boxShadow: 'var(--shadow-card-strong)', overflow: 'hidden' }}>
-          {state.items.map((item, i) => {
-            const activo = state.etqSel.includes(item.id)
-            return (
-              <button
-                key={item.id}
-                className="fila-inventario"
-                onClick={() => dispatch({ type: 'TOGGLE_ETQ_SEL', id: item.id })}
-                style={{
-                  appearance: 'none',
-                  border: 0,
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  fontFamily: 'inherit',
-                  width: '100%',
-                  padding: '9px 14px',
-                  display: 'flex',
-                  gap: 12,
-                  alignItems: 'center',
-                  borderBottom: i < state.items.length - 1 ? '.5px solid var(--color-hairline-strong)' : undefined,
-                  borderLeft: `3px solid ${activo ? 'var(--color-accent-light)' : 'transparent'}`,
-                  background: activo ? 'rgba(224,71,47,.06)' : undefined,
-                }}
-              >
-                <QrCode value={item.id} size={28} />
-                <span style={{ width: 90, flex: 'none', fontSize: 14, fontWeight: 680, letterSpacing: '-0.02em' }}>{item.id}</span>
-                <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--color-text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {nombreCliente(state.clientes, item.clienteId)}
-                </span>
-                <span style={{ width: 100, flex: 'none', fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatUbicacion(item.ubicacion)}</span>
-                <span style={{ width: 130, flex: 'none', fontSize: 12, color: 'var(--color-text-dim)', textAlign: 'right' }}>Ramos · {formatFecha(item.fechaEntrada)}</span>
-              </button>
-            )
-          })}
+          {clientesConMudanza.length === 0 && (
+            <p style={{ margin: 0, padding: 18, fontSize: 14, color: 'var(--color-text-dim)' }}>Todavía no hay artículos de mudanzas para etiquetar.</p>
+          )}
+          {clientesConMudanza.map((c, i) => (
+            <button
+              key={c.clienteId}
+              className="fila-inventario"
+              onClick={() => setClienteSel(c.clienteId)}
+              style={{
+                appearance: 'none',
+                border: 0,
+                cursor: 'pointer',
+                width: '100%',
+                textAlign: 'left',
+                fontFamily: 'inherit',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '15px 18px',
+                borderBottom: i < clientesConMudanza.length - 1 ? '.5px solid var(--color-hairline)' : undefined,
+              }}
+            >
+              <span style={{ fontSize: 16, fontWeight: 640, letterSpacing: '-0.02em' }}>{c.nombre}</span>
+              <span style={{ fontSize: 13, color: 'var(--color-text-dim)' }}>
+                {c.articulos} artículo(s) · {c.mudanzas} mudanza(s)
+              </span>
+            </button>
+          ))}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${AJUSTES_POR_TAMANO[tamano].colMinPx}px, 1fr))`, gap: 12 }}>
-          {state.items.map((item) => {
-            const activo = state.etqSel.includes(item.id)
-            const a = AJUSTES_POR_TAMANO[tamano]
-            return (
-              <button
-                key={item.id}
-                onClick={() => dispatch({ type: 'TOGGLE_ETQ_SEL', id: item.id })}
-                style={{
-                  appearance: 'none',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  fontFamily: 'inherit',
-                  padding: a.pad,
-                  display: 'flex',
-                  gap: 12,
-                  alignItems: 'flex-start',
-                  borderRadius: 'var(--radius-label-card)',
-                  border: `1.5px solid ${activo ? 'var(--color-accent-light)' : 'var(--color-hairline-strong)'}`,
-                  background: activo ? 'rgba(224,71,47,.08)' : 'var(--color-card-surface-strong)',
-                  boxShadow: 'var(--shadow-card)',
-                }}
-              >
-                <QrCode value={item.id} size={a.qr} />
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: a.id, fontWeight: 680, letterSpacing: '-0.025em' }}>{item.id}</div>
-                  <div style={{ fontSize: a.meta, color: 'var(--color-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {nombreCliente(state.clientes, item.clienteId)}
-                  </div>
-                  <div style={{ fontSize: a.meta + 1, fontWeight: 600, marginTop: 6, fontVariantNumeric: 'tabular-nums' }}>{formatUbicacion(item.ubicacion)}</div>
-                  <div style={{ fontSize: a.meta - 1, color: 'var(--color-text-dim)', marginTop: 4 }}>Ramos · {formatFecha(item.fechaEntrada)}</div>
-                </div>
-              </button>
-            )
-          })}
-        </div>
+        <>
+          {origen === 'Mudanzas' && clienteSel && (
+            <button
+              className="boton-cristal"
+              onClick={() => setClienteSel(null)}
+              style={{
+                appearance: 'none',
+                border: 0,
+                cursor: 'pointer',
+                marginBottom: 14,
+                minHeight: 34,
+                padding: '0 14px',
+                borderRadius: 11,
+                fontFamily: 'inherit',
+                fontSize: 14,
+                fontWeight: 560,
+                color: 'var(--color-accent)',
+              }}
+            >
+              ‹ {nombreCliente(state.clientes, clienteSel)}
+            </button>
+          )}
+
+          {tamano === 'Lista' ? (
+            <div style={{ borderRadius: 'var(--radius-card)', background: 'var(--color-card-surface-strong)', boxShadow: 'var(--shadow-card-strong)', overflow: 'hidden' }}>
+              {itemsAMostrar.length === 0 && (
+                <p style={{ margin: 0, padding: 18, fontSize: 14, color: 'var(--color-text-dim)' }}>No hay artículos acá.</p>
+              )}
+              {itemsAMostrar.map((item, i) => {
+                const activo = state.etqSel.includes(item.id)
+                return (
+                  <button
+                    key={item.id}
+                    className="fila-inventario"
+                    onClick={() => dispatch({ type: 'TOGGLE_ETQ_SEL', id: item.id })}
+                    style={{
+                      appearance: 'none',
+                      border: 0,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      fontFamily: 'inherit',
+                      width: '100%',
+                      padding: '9px 14px',
+                      display: 'flex',
+                      gap: 12,
+                      alignItems: 'center',
+                      borderBottom: i < itemsAMostrar.length - 1 ? '.5px solid var(--color-hairline-strong)' : undefined,
+                      borderLeft: `3px solid ${activo ? 'var(--color-accent-light)' : 'transparent'}`,
+                      background: activo ? 'rgba(224,71,47,.06)' : undefined,
+                    }}
+                  >
+                    <QrCode value={item.id} size={28} />
+                    <span style={{ width: 90, flex: 'none', fontSize: 14, fontWeight: 680, letterSpacing: '-0.02em' }}>{item.id}</span>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--color-text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {nombreCliente(state.clientes, item.clienteId)}
+                    </span>
+                    <span style={{ width: 100, flex: 'none', fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatUbicacion(item.ubicacion)}</span>
+                    <span style={{ width: 130, flex: 'none', fontSize: 12, color: 'var(--color-text-dim)', textAlign: 'right' }}>Ramos · {formatFecha(item.fechaEntrada)}</span>
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${AJUSTES_POR_TAMANO[tamano].colMinPx}px, 1fr))`, gap: 12 }}>
+              {itemsAMostrar.length === 0 && (
+                <p style={{ margin: 0, fontSize: 14, color: 'var(--color-text-dim)' }}>No hay artículos acá.</p>
+              )}
+              {itemsAMostrar.map((item) => {
+                const activo = state.etqSel.includes(item.id)
+                const a = AJUSTES_POR_TAMANO[tamano]
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => dispatch({ type: 'TOGGLE_ETQ_SEL', id: item.id })}
+                    style={{
+                      appearance: 'none',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      fontFamily: 'inherit',
+                      padding: a.pad,
+                      display: 'flex',
+                      gap: 12,
+                      alignItems: 'flex-start',
+                      borderRadius: 'var(--radius-label-card)',
+                      border: `1.5px solid ${activo ? 'var(--color-accent-light)' : 'var(--color-hairline-strong)'}`,
+                      background: activo ? 'rgba(224,71,47,.08)' : 'var(--color-card-surface-strong)',
+                      boxShadow: 'var(--shadow-card)',
+                    }}
+                  >
+                    <QrCode value={item.id} size={a.qr} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: a.id, fontWeight: 680, letterSpacing: '-0.025em' }}>{item.id}</div>
+                      <div style={{ fontSize: a.meta, color: 'var(--color-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {nombreCliente(state.clientes, item.clienteId)}
+                      </div>
+                      <div style={{ fontSize: a.meta + 1, fontWeight: 600, marginTop: 6, fontVariantNumeric: 'tabular-nums' }}>{formatUbicacion(item.ubicacion)}</div>
+                      <div style={{ fontSize: a.meta - 1, color: 'var(--color-text-dim)', marginTop: 4 }}>Ramos · {formatFecha(item.fechaEntrada)}</div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </>
       )}
 
       {createPortal(
