@@ -10,6 +10,12 @@ App para llevar los gastos de la casa entre dos personas (Josué y Roxana). Es u
 Cada gasto se marca como de Josué, de Roxana o de **la casa** (renta, súper, luz…), y como **necesario** o **gusto**.
 La primera vez, cada aparato pregunta quién lo usa, para que lo que anote quede a su nombre.
 
+## Lo que ganamos
+
+Arriba de todo, cada quien elige cada cuánto cobra (**semanal**, **quincenal** o **mensual**) y anota cada pago
+(semana 1–5, 1ª y 2ª quincena, o el pago del mes) más extras o bonos. La app suma todo y muestra
+lo que ganaron en el mes, lo gastado y lo que sobra. La frecuencia se recuerda para los meses siguientes.
+
 ## Gastos fijos
 
 Renta, carro, internet, teléfono, seguros… se ponen una vez y **aparecen solos cada mes**, separados de los demás gastos.

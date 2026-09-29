@@ -212,6 +212,28 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
 .toast { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%) rotate(-1deg); background: var(--butter); color: #3E3346; border: 1.5px solid #3E3346; box-shadow: 3px 3px 0 var(--shadow); padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.92rem; max-width: calc(100% - 32px); z-index: 5; }
 .file-btn { position: relative; overflow: hidden; }
 .file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+/* Lo que ganamos: sueldo del mes */
+.income { gap: 14px; }
+.inc-top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 20px; }
+.inc-total .num { display: block; font-size: clamp(2rem, 7vw, 2.8rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; color: var(--good); }
+.inc-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: baseline; gap: 6px; padding: 5px 12px; border-radius: 999px; background: var(--track); font-size: 0.85rem; }
+.chip b { font-family: var(--font-num); }
+.chip.good { background: var(--good-soft); color: var(--good); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+.inc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 14px; }
+.inc-person { border: 1.5px dashed var(--rule); border-radius: 14px; padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.inc-person header { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.inc-person header .num { margin-left: auto; font-size: 1.05rem; }
+.inc-person .est { font-size: 0.78rem; color: var(--ink-soft); font-weight: 400; }
+.freq { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.freq .opt span { padding: 6px 4px; font-size: 0.85rem; }
+.inc-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
+.inc-slots .field { gap: 4px; }
+.inc-slots .label { font-size: 0.66rem; }
+.inc-slots input { font-family: var(--font-num); }
+.inc-slots input.filled { border-color: var(--good); background: var(--good-soft); }
+
 /* Gastos fijos: se repiten solos cada mes */
 .fx-group { display: grid; gap: 2px; }
 .fx-head { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--ink-soft); padding: 10px 0 4px; border-bottom: 2px dashed var(--rule); }
@@ -272,6 +294,8 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
   </div>
 
   <nav class="tabs" id="tabs" role="tablist" aria-label="Apartados"></nav>
+
+  <section class="card income" id="incomeCard" aria-label="Lo que ganamos"></section>
 
   <section class="card receipt" id="summary" aria-live="polite"></section>
 
@@ -337,7 +361,7 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     <summary><svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Ingresos, ahorro y límites<svg class="i chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></summary>
     <div class="inner">
       <form id="settingsForm">
-        <p class="hint" style="font-size:.92rem">Pongan lo que gana cada quien al mes y cuánto quieren ahorrar juntos. Lo que queda es lo que la casa puede gastar. El límite personal es para los gastos de cada quien (su ropa, sus gustos) y aparece en su apartado.</p>
+        <p class="hint" style="font-size:.92rem">Lo que cobran de verdad se anota arriba, en <b>Lo que ganamos</b>. Aquí va un aproximado que se usa mientras no anoten lo cobrado, y cuánto quieren ahorrar juntos. Lo que queda es lo que la casa puede gastar. El límite personal es para los gastos de cada quien (su ropa, sus gustos) y aparece en su apartado.</p>
         <div class="people-set" id="peopleSet"></div>
         <div class="row2">
           <div class="field"><label class="label" for="sSave">Meta de ahorro juntos, al mes</label><input type="number" min="0" step="0.01" id="sSave" inputmode="decimal"></div>
@@ -438,13 +462,13 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
   var LOCAL_KEY = "nuestras-cuentas-v2", OLD_LOCAL_KEY = "mis-gastos-v1", ME_KEY = "nuestras-cuentas-yo", TAB_KEY = "nuestras-cuentas-tab";
   var DEFAULT_SETTINGS = { currency: "USD", names: { p1: "Josué", p2: "Roxana" }, income: { p1: 0, p2: 0 }, allowance: { p1: 0, p2: 0 }, savingsGoal: 0, budget: 0, limits: {} };
 
-  var state = { settings: normSettings(null), docs: {}, migrated: {}, fixed: { items: [], months: {} } };
+  var state = { settings: normSettings(null), docs: {}, migrated: {}, fixed: { items: [], months: {} }, income: {} };
   var mode = "loading", readOnly = false, uidSelf = null;
   var viewKey = monthKey(new Date());
   var editingId = null, confirmDelete = false, filterCat = "", freshId = null;
   var me = lsGet(ME_KEY); if (PEOPLE.indexOf(me) < 0) me = null;
   var tab = lsGet(TAB_KEY); if (["todos", "p1", "p2"].indexOf(tab) < 0) tab = "todos";
-  var db = null, configRef = null, monthsCol = null, fixedRef = null, downloads = null;
+  var db = null, configRef = null, monthsCol = null, fixedRef = null, incomeCol = null, downloads = null;
   var editingFixed = null; // id del gasto fijo abierto, o "new"
 
 
@@ -551,15 +575,46 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     else saveLocal();
   }
 
+  // Lo que se cobra: un documento por persona y mes (ingresos/2026-10_p1) con la frecuencia y cada pago.
+  var FREQ = {
+    semanal: { n: "Semanal", slots: ["Semana 1", "Semana 2", "Semana 3", "Semana 4", "Semana 5"] },
+    quincenal: { n: "Quincenal", slots: ["1ª quincena", "2ª quincena"] },
+    mensual: { n: "Mensual", slots: ["Pago del mes"] }
+  };
+  function normIncome(d) {
+    d = d || {};
+    return { freq: FREQ[d.freq] ? d.freq : null, pays: (Array.isArray(d.pays) ? d.pays : []).slice(0, 5).map(function (v) { return round2(num(v)); }), extra: round2(num(d.extra)) };
+  }
+  function freqFor(m, p) {
+    var doc = state.income[m + "_" + p];
+    if (doc && doc.freq) return doc.freq;
+    var best = null; // la frecuencia del último mes anotado antes de este
+    Object.keys(state.income).forEach(function (k) { if (k.slice(8) === p && k.slice(0, 7) < m && state.income[k].freq && (!best || k > best)) best = k; });
+    return best ? state.income[best].freq : "quincenal";
+  }
+  function earned(m, p) {
+    var doc = state.income[m + "_" + p]; if (!doc) return 0;
+    var n = FREQ[freqFor(m, p)].slots.length, t = doc.extra || 0;
+    for (var i = 0; i < n; i++) t += doc.pays[i] || 0;
+    return round2(t);
+  }
+  // Si aún no anotan lo cobrado, se usa el aproximado de Ajustes.
+  function incomeFor(m, p) { var e = earned(m, p); return e > 0 ? e : (state.settings.income[p] || 0); }
+  function incomeIsReal(m, p) { return earned(m, p) > 0; }
+  function persistIncome(k) {
+    if (mode === "db") queueWrite("in:" + k, function () { return incomeCol.doc(k).set(Object.assign({}, state.income[k], { updatedAt: Date.now() })); });
+    else saveLocal();
+  }
+
   // ---------- guardado ----------
   function saveLocal() {
-    try { localStorage.setItem(LOCAL_KEY, JSON.stringify({ settings: state.settings, docs: state.docs, fixed: state.fixed })); }
+    try { localStorage.setItem(LOCAL_KEY, JSON.stringify({ settings: state.settings, docs: state.docs, fixed: state.fixed, income: state.income })); }
     catch (e) { toast("No se pudo guardar en este navegador. Descarguen un respaldo."); }
   }
   function loadLocal() {
     try {
       var raw = localStorage.getItem(LOCAL_KEY);
-      if (raw) { var d = JSON.parse(raw); state.settings = normSettings(d.settings); state.docs = d.docs || {}; state.fixed = normFixed(d.fixed); return; }
+      if (raw) { var d = JSON.parse(raw); state.settings = normSettings(d.settings); state.docs = d.docs || {}; state.fixed = normFixed(d.fixed); state.income = {}; Object.keys(d.income || {}).forEach(function (k) { state.income[k] = normIncome(d.income[k]); }); return; }
       var old = localStorage.getItem(OLD_LOCAL_KEY);
       if (old) { migrateV1(JSON.parse(old)); saveLocal(); }
     } catch (e) {}
@@ -605,10 +660,11 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     configRef = db.doc("hogar/config");
     monthsCol = db.collection("meses");
     fixedRef = db.doc("hogar/fijos");
-    var gotC = false, gotM = false, gotF = false, cfgExists = false;
+    incomeCol = db.collection("ingresos");
+    var gotC = false, gotM = false, gotF = false, gotI = false, cfgExists = false;
     function ready() {
       render();
-      if (gotC && gotM && gotF && mode !== "db") { mode = "db"; setStatus(); render(); migrateDb(cfgExists); }
+      if (gotC && gotM && gotF && gotI && mode !== "db") { mode = "db"; setStatus(); render(); migrateDb(cfgExists); }
     }
     configRef.onSnapshot(function (snap) {
       if (!running.cfg) {
@@ -630,6 +686,10 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     fixedRef.onSnapshot(function (snap) {
       if (!running.fx) state.fixed = normFixed(snap.exists ? snap.data() : null);
       gotF = true; ready();
+    }, dbFailed);
+    incomeCol.onSnapshot(function (snap) {
+      snap.docs.forEach(function (doc) { if (!running["in:" + doc.id]) state.income[doc.id] = normIncome(doc.data()); });
+      gotI = true; ready();
     }, dbFailed);
   }
   // Trae lo que se anotó en la primera versión (guardada en privado para quien la usaba) al espacio compartido.
@@ -669,19 +729,20 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
   }
 
   // ---------- cálculos ----------
-  function incomeTotal() { var s = state.settings; return (s.income.p1 || 0) + (s.income.p2 || 0); }
-  function houseBudget() { var s = state.settings, inc = incomeTotal(); return inc > 0 ? Math.max(0, inc - (s.savingsGoal || 0)) : (s.budget || 0); }
+  function expectedIncome() { var s = state.settings; return (s.income.p1 || 0) + (s.income.p2 || 0); }
+  function incomeTotal(m) { return incomeFor(m, "p1") + incomeFor(m, "p2"); }
+  function houseBudget(m) { var s = state.settings, inc = incomeTotal(m); return inc > 0 ? Math.max(0, inc - (s.savingsGoal || 0)) : (s.budget || 0); }
   function monthInfo(key) {
     var now = new Date(), isCurrent = key === monthKey(now), p = key.split("-"), dim = new Date(+p[0], +p[1], 0).getDate();
     var future = key > monthKey(now);
-    return { isCurrent: isCurrent, dim: dim, day: isCurrent ? now.getDate() : (future ? 1 : dim) };
+    return { isCurrent: isCurrent, future: future, dim: dim, day: isCurrent ? now.getDate() : (future ? 1 : dim) };
   }
 
   // ---------- pintar ----------
   function render() {
     $("monthLabel").textContent = cap(monthName(viewKey));
     $("curSym").textContent = curSymbol();
-    renderTabs(); renderSummary(); renderFixed(); renderCats(); renderList();
+    renderTabs(); renderIncome(); renderSummary(); renderFixed(); renderCats(); renderList();
   }
 
   function renderTabs() {
@@ -693,6 +754,74 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
         '<span>' + (t === "todos" ? "Los dos" : esc(name(t))) + '</span>' + (mode === "loading" ? '' : '<span class="amt">' + money(total) + '</span>') + '</button>';
     }).join("");
   }
+
+  function spentBy(m, p) { return sum(allItems(m, p)); }
+  function incomeTotalsHtml() {
+    var people = tab === "todos" ? PEOPLE : [tab], m = viewKey;
+    var won = 0, real = true, spent = tab === "todos" ? sum(allItems(m, "todos")) : spentBy(m, tab);
+    people.forEach(function (p) { won += incomeFor(m, p); if (!incomeIsReal(m, p)) real = false; });
+    var left = won - spent, mn = esc(monthName(m));
+    return '<div class="inc-total"><span class="label">' + (tab === "todos" ? 'Ganaron en ' : 'Ganó ' + esc(name(tab)) + ' en ') + mn + '</span><span class="num" id="incSum">' + money(won) + '</span></div>' +
+      '<div class="inc-chips">' + (won > 0 && !real ? '<span class="chip">aproximado · falta anotar lo cobrado</span>' : '') +
+      '<span class="chip">Gastado <b>' + money(spent) + '</b></span>' +
+      (won > 0 ? '<span class="chip ' + (left >= 0 ? 'good' : 'bad') + '">' + (left >= 0 ? 'Sobra ' : 'Faltan ') + '<b>' + money(Math.abs(left)) + '</b></span>' : '') +
+      (tab === "todos" && state.settings.savingsGoal > 0 && won > 0 ? '<span class="chip">Meta de ahorro <b>' + money(state.settings.savingsGoal) + '</b></span>' : '') + '</div>';
+  }
+  function renderIncome() {
+    var el = $("incomeCard");
+    if (mode === "loading") { el.innerHTML = '<h2>Lo que ganamos</h2><div class="soft">Cargando…</div>'; return; }
+    // Mientras alguien escribe aquí, solo se actualizan los totales para no quitarle el cursor.
+    if (el.contains(document.activeElement) && document.activeElement.tagName === "INPUT" && el.getAttribute("data-key") === viewKey + tab) {
+      $("incTop").innerHTML = incomeTotalsHtml(); updateIncomeSubtotals(); return;
+    }
+    el.setAttribute("data-key", viewKey + tab);
+    var people = tab === "todos" ? PEOPLE : [tab];
+    var h = '<div class="card-head"><h2>' + (tab === "todos" ? 'Lo que ganamos' : 'Lo que gana ' + esc(name(tab))) + '</h2><span class="hint">Anoten cada pago en cuanto lo cobren</span></div>' +
+      '<div class="inc-top" id="incTop">' + incomeTotalsHtml() + '</div><div class="inc-grid">';
+    people.forEach(function (p) {
+      var k = viewKey + "_" + p, doc = state.income[k] || normIncome(null), fq = freqFor(viewKey, p);
+      h += '<div class="inc-person"><header>' + avatar(p, true) + esc(name(p)) + ' <span class="est" id="est-' + p + '"></span><span class="num" id="sub-' + p + '"></span></header>' +
+        '<div class="freq" role="radiogroup" aria-label="Cada cuánto cobra ' + esc(name(p)) + '">' + Object.keys(FREQ).map(function (f) {
+          return '<label class="opt" style="--c:var(--' + p + ')"><input type="radio" name="freq-' + p + '" id="freq-' + p + '-' + f + '" value="' + f + '" data-p="' + p + '"' + (f === fq ? ' checked' : '') + '><span>' + FREQ[f].n + '</span></label>';
+        }).join("") + '</div><div class="inc-slots">' +
+        FREQ[fq].slots.map(function (lab, i) {
+          var v = doc.pays[i] || "";
+          return '<div class="field"><label class="label" for="pay-' + p + '-' + i + '">' + lab + '</label><input type="number" min="0" step="0.01" inputmode="decimal" id="pay-' + p + '-' + i + '" data-p="' + p + '" data-i="' + i + '" value="' + v + '" placeholder="0.00"' + (v ? ' class="filled"' : '') + (readOnly ? ' disabled' : '') + '></div>';
+        }).join("") +
+        '<div class="field"><label class="label" for="pay-' + p + '-x">Extra / bonos</label><input type="number" min="0" step="0.01" inputmode="decimal" id="pay-' + p + '-x" data-p="' + p + '" data-i="x" value="' + (doc.extra || "") + '" placeholder="0.00"' + (doc.extra ? ' class="filled"' : '') + (readOnly ? ' disabled' : '') + '></div>' +
+        '</div></div>';
+    });
+    el.innerHTML = h + '</div>';
+    updateIncomeSubtotals();
+  }
+  function updateIncomeSubtotals() {
+    PEOPLE.forEach(function (p) {
+      var sEl = $("sub-" + p), eEl = $("est-" + p); if (!sEl) return;
+      sEl.textContent = money(earned(viewKey, p));
+      eEl.textContent = !incomeIsReal(viewKey, p) && state.settings.income[p] ? "(aprox. " + money(state.settings.income[p]) + ")" : "";
+    });
+  }
+  function incomeInput(t, save) {
+    var p = t.getAttribute("data-p"), i = t.getAttribute("data-i"); if (!p || readOnly || mode === "loading") return;
+    var k = viewKey + "_" + p, doc = state.income[k] = state.income[k] || normIncome(null);
+    if (!doc.freq) doc.freq = freqFor(viewKey, p);
+    var v = round2(num(t.value));
+    if (i === "x") doc.extra = v; else { while (doc.pays.length <= +i) doc.pays.push(0); doc.pays[+i] = v; }
+    t.classList.toggle("filled", v > 0);
+    if (save) persistIncome(k);
+    renderTabs(); $("incTop").innerHTML = incomeTotalsHtml(); updateIncomeSubtotals(); renderSummary();
+  }
+  $("incomeCard").addEventListener("input", function (e) { if (e.target.type === "number") incomeInput(e.target, false); });
+  $("incomeCard").addEventListener("change", function (e) {
+    var t = e.target;
+    if (t.type === "number") { incomeInput(t, true); if (t.value) toast("Anotado: " + money(round2(num(t.value))) + " · " + name(t.getAttribute("data-p"))); }
+    else if (t.type === "radio" && !readOnly) {
+      var p = t.getAttribute("data-p"), k = viewKey + "_" + p, doc = state.income[k] = state.income[k] || normIncome(null);
+      doc.freq = t.value; persistIncome(k); el0().setAttribute("data-key", ""); render();
+      toast(name(p) + " cobra " + FREQ[t.value].n.toLowerCase());
+    }
+  });
+  function el0() { return $("incomeCard"); }
 
   function statHtml(x) { return '<div class="stat"><span class="label">' + x[0] + '</span><span class="num">' + x[1] + '</span><small>' + x[2] + '</small></div>'; }
   function tipHtml(t) { return '<div class="tip">' + icon("bulb") + '<span>' + t + '</span></div>'; }
@@ -710,7 +839,7 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     var fixedT = sum(list.filter(function (it) { return it.fixed; })), varT = total - fixedT, varN = list.length - list.filter(function (it) { return it.fixed; }).length;
     var prevT = sum(allItems(shiftMonth(viewKey, -1)));
     var h = "", stats = [], tips = [], stamp = null;
-        var budget = tab === "todos" ? houseBudget() : (s.allowance[tab] || 0);
+        var budget = tab === "todos" ? houseBudget(viewKey) : (s.allowance[tab] || 0);
     var left = budget - total, over = budget > 0 && left < 0;
     // Los fijos no se "proyectan": ya se sabe cuánto son. Solo los otros gastos siguen el ritmo diario.
     var proj = mi.isCurrent && varT > 0 && mi.day < mi.dim ? fixedT + varT / mi.day * mi.dim : null;
@@ -741,9 +870,12 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
       stats.push([tab === "todos" ? 'Pueden gastar al día' : 'Puede gastar al día', money(Math.max(0, left) / daysLeft), 'por los ' + daysLeft + ' día' + (daysLeft === 1 ? '' : 's') + ' que quedan']);
     }
     if (proj != null) stats.push(['A este ritmo, a fin de mes', money(proj), budget > 0 ? (proj > budget ? (tab === "todos" ? 'se pasarían por ' : 'se pasaría por ') + money(proj - budget) : (tab === "todos" ? 'sobrarían ' : 'le sobrarían ') + money(budget - proj)) : 'si siguen igual']);
-    if (tab === "todos" && incomeTotal() > 0) {
-      var saved = incomeTotal() - total;
-      stats.push([mi.isCurrent ? 'Ahorro que llevan' : 'Ahorraron', money(saved), s.savingsGoal > 0 ? 'meta: ' + money(s.savingsGoal) : 'ingresos menos gastos']);
+    if (tab === "todos" && incomeTotal(viewKey) > 0) {
+      var saved = incomeTotal(viewKey) - total;
+      stats.push([mi.isCurrent || mi.future ? 'Les sobra del sueldo' : 'Ahorraron', money(saved), s.savingsGoal > 0 ? 'meta de ahorro: ' + money(s.savingsGoal) : 'lo ganado menos lo gastado']);
+    }
+    if (tab !== "todos" && incomeFor(viewKey, tab) > 0) {
+      stats.push(['Le sobra del sueldo', money(incomeFor(viewKey, tab) - total), 'ganó ' + money(incomeFor(viewKey, tab)) + (incomeIsReal(viewKey, tab) ? '' : ' (aprox.)')]);
     }
     if (tab !== "todos") {
       var shared = sum(allItems(viewKey, "todos").filter(function (it) { return it.who !== "casa"; }));
@@ -753,11 +885,11 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     if (prevT > 0) { var diff = total - prevT; stats.push(['Contra el mes pasado', (diff > 0 ? '+' : '') + money(diff), 'el mes pasado: ' + money(prevT)]); }
     h += '<div class="stats">' + stats.map(statHtml).join("") + '</div>';
 
-    if (budget > 0 && total > 0) {
+    if (budget > 0 && total > 0 && !mi.future) {
       if (over || (proj != null && proj > budget)) stamp = ["bad", "¡Ojo con<br>el gasto!"];
       else if (!mi.isCurrent || mi.day >= 7) stamp = ["good", mi.isCurrent ? "¡Vamos<br>bien!" : "Meta<br>cumplida"];
     }
-    if (tab === "todos" && budget <= 0) tips.push('Abran <b>Ingresos, ahorro y límites</b> abajo y pongan lo que gana cada quien y cuánto quieren ahorrar. Así la app les dice cuánto pueden gastar cada día.');
+    if (tab === "todos" && budget <= 0) tips.push('Anoten arriba, en <b>Lo que ganamos</b>, lo que cobró cada quien este mes. Así la app les dice cuánto les queda y cuánto pueden gastar cada día.');
     else if (tab !== "todos" && budget <= 0) tips.push('Pongan en <b>Ingresos, ahorro y límites</b> cuánto puede gastar ' + esc(name(tab)) + ' al mes en sus cosas, y aquí verá cuánto le queda.');
     if (total > 0 && wantT / total > 0.3) tips.push('Más del 30% de lo que ' + (tab === "todos" ? 'gastaron' : 'gastó ' + esc(name(tab))) + ' son gustos. Recortarlos a la mitad dejaría ' + money(wantT / 2) + ' extra para el ahorro.');
     h += tips.map(tipHtml).join("");
@@ -943,7 +1075,7 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     $("peopleSet").innerHTML = PEOPLE.map(function (p) {
       return '<fieldset><legend>' + avatar(p, true) + esc(name(p)) + '</legend>' +
         '<div class="field"><label class="label" for="name-' + p + '">Nombre</label><input type="text" id="name-' + p + '" maxlength="24"></div>' +
-        '<div class="field"><label class="label" for="inc-' + p + '">Ingreso al mes</label><input type="number" min="0" step="0.01" id="inc-' + p + '" inputmode="decimal"></div>' +
+        '<div class="field"><label class="label" for="inc-' + p + '">Ingreso aproximado al mes</label><input type="number" min="0" step="0.01" id="inc-' + p + '" inputmode="decimal"></div>' +
         '<div class="field"><label class="label" for="allow-' + p + '">Límite para sus gastos personales</label><input type="number" min="0" step="0.01" id="allow-' + p + '" inputmode="decimal" placeholder="Sin límite"></div></fieldset>';
     }).join("");
     fillSettings();
@@ -1044,7 +1176,7 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     PEOPLE.forEach(function (p) { raw.names[p] = $("name-" + p).value.trim() || DEFAULT_SETTINGS.names[p]; raw.income[p] = round2(num($("inc-" + p).value)); raw.allowance[p] = round2(num($("allow-" + p).value)); });
     CATS.forEach(function (c) { var v = round2(num($("lim-" + c.id).value)); if (v > 0) raw.limits[c.id] = v; });
     state.settings = normSettings(raw);
-    toast(incomeTotal() > 0 && state.settings.savingsGoal > incomeTotal() ? "La meta de ahorro es mayor que lo que ganan juntos." : "Ajustes guardados");
+    toast(expectedIncome() > 0 && state.settings.savingsGoal > expectedIncome() ? "La meta de ahorro es mayor que lo que ganan juntos." : "Ajustes guardados");
     persistConfig(); buildNamed(); setStatus(); render();
   });
 
@@ -1055,6 +1187,11 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
       monthItems(k).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }).forEach(function (it) {
         rows.push([it.date, name(it.who || "p1"), name(it.by || "p1"), (CAT[it.cat] || CAT.otros).n, it.kind === "want" ? "Gusto" : "Necesario", it.note || "", it.method || "", it.amount.toFixed(2)]);
       });
+      PEOPLE.forEach(function (p) {
+        var doc = state.income[k + "_" + p]; if (!doc) return;
+        FREQ[freqFor(k, p)].slots.forEach(function (lab, i) { if (doc.pays[i]) rows.push([k + "-01", name(p), "", "Sueldo", "Ingreso", lab, "", doc.pays[i].toFixed(2)]); });
+        if (doc.extra) rows.push([k + "-01", name(p), "", "Sueldo", "Ingreso", "Extra / bonos", "", doc.extra.toFixed(2)]);
+      });
       fixedRows(k, "todos").forEach(function (r) {
         rows.push([k + "-01", name(r.who), "", (CAT[r.cat] || CAT.otros).n, "Fijo" + (r.paid ? " (pagado)" : ""), r.f.name, "", r.amount.toFixed(2)]);
       });
@@ -1062,7 +1199,7 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     return "﻿" + rows.map(function (r) { return r.map(function (v) { v = String(v); return /[",\n;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(","); }).join("\r\n");
   }
   function allMonths() {
-    var m = {}; Object.keys(state.docs).forEach(function (d) { m[d.slice(0, 7)] = 1; });
+    var m = {}; Object.keys(state.docs).concat(Object.keys(state.income)).forEach(function (d) { m[d.slice(0, 7)] = 1; });
     var first = null; state.fixed.items.forEach(function (f) { if (!first || f.from < first) first = f.from; });
     for (var k = first; k && k <= viewKey; k = shiftMonth(k, 1)) m[k] = 1;
     return Object.keys(m);
@@ -1081,7 +1218,7 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
   $("csvMonth").addEventListener("click", function () { saveFile("gastos-" + viewKey + ".csv", csv([viewKey]), "text/csv"); });
   $("csvAll").addEventListener("click", function () { saveFile("gastos-todo.csv", csv(allMonths()), "text/csv"); });
   $("jsonOut").addEventListener("click", function () {
-    saveFile("respaldo-cuentas-" + todayStr() + ".json", JSON.stringify({ app: "nuestras-cuentas", version: 3, settings: state.settings, docs: state.docs, fixed: state.fixed }, null, 2), "application/json");
+    saveFile("respaldo-cuentas-" + todayStr() + ".json", JSON.stringify({ app: "nuestras-cuentas", version: 4, settings: state.settings, docs: state.docs, fixed: state.fixed, income: state.income }, null, 2), "application/json");
   });
   $("jsonIn").addEventListener("change", function () {
     var file = this.files && this.files[0]; this.value = "";
@@ -1094,11 +1231,14 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
           var list = [];
           Object.keys(d.docs).forEach(function (k) { if (Array.isArray(d.docs[k])) d.docs[k].forEach(function (it) { list.push(Object.assign({ by: k.slice(8) }, it)); }); });
           changed = mergeItems(list, me || "p1");
-          if (d.settings && !incomeTotal() && !state.settings.budget) { state.settings = normSettings(d.settings); persistConfig(); buildNamed(); }
+          if (d.settings && !expectedIncome() && !state.settings.budget) { state.settings = normSettings(d.settings); persistConfig(); buildNamed(); }
         } else if (d && d.months && typeof d.months === "object") changed = migrateV1(d), persistConfig();
         else throw 0;
         if (d.fixed && !state.fixed.items.length) { state.fixed = normFixed(d.fixed); persistFixed(); if (state.fixed.items.length) changed = changed.concat(["fijos"]); }
-        changed.forEach(function (k) { if (k !== "fijos") persistDoc(k); });
+        if (d.income && typeof d.income === "object") Object.keys(d.income).forEach(function (k) {
+          if (/^\d{4}-\d{2}_p[12]$/.test(k) && !state.income[k]) { state.income[k] = normIncome(d.income[k]); persistIncome(k); changed = changed.concat(["ingresos"]); }
+        });
+        changed.forEach(function (k) { if (k !== "fijos" && k !== "ingresos") persistDoc(k); });
         toast(changed.length ? "Respaldo cargado" : "El respaldo no tenía gastos nuevos");
         setStatus(); render();
       } catch (e) { toast("Ese archivo no es un respaldo de esta app."); }
