@@ -373,7 +373,7 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     <summary><svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Ingresos, ahorro y límites<svg class="i chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></summary>
     <div class="inner">
       <form id="settingsForm">
-        <p class="hint" style="font-size:.92rem">Lo que cobran de verdad se anota arriba, en <b>Lo que ganamos</b>. Aquí va un aproximado que se usa mientras no anoten lo cobrado, y cuánto quieren ahorrar juntos. Lo que queda es lo que la casa puede gastar. El límite personal es para los gastos de cada quien (su ropa, sus gustos) y aparece en su apartado.</p>
+        <p class="hint" style="font-size:.92rem">Lo que cobran de verdad se anota arriba, en <b>Lo que ganamos</b>. Aquí va un aproximado que se usa mientras no anoten lo cobrado, y cuánto quieren ahorrar juntos. Lo que queda es lo que la casa puede gastar. El límite de gustos es lo máximo que cada quien quiere gastar en antojos (comida fuera, diversión…) y aparece en su apartado.</p>
         <div class="people-set" id="peopleSet"></div>
         <div class="row2">
           <div class="field"><label class="label" for="sSave">Meta de ahorro juntos, al mes</label><input type="number" min="0" step="0.01" id="sSave" inputmode="decimal"></div>
@@ -758,6 +758,11 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
   // ---------- cálculos ----------
   function expectedIncome() { var s = state.settings; return (s.income.p1 || 0) + (s.income.p2 || 0); }
   function incomeTotal(m) { return incomeFor(m, "p1") + incomeFor(m, "p2"); }
+  function personBudget(m, p) {
+    var inc = incomeFor(m, p), tot = incomeTotal(m), goal = state.settings.savingsGoal || 0;
+    if (inc <= 0) return 0;
+    return Math.max(0, inc - (tot > 0 ? goal * inc / tot : 0)); // la meta se reparte según lo que gana cada quien
+  }
   function houseBudget(m) { var s = state.settings, inc = incomeTotal(m); return inc > 0 ? Math.max(0, inc - (s.savingsGoal || 0)) : (s.budget || 0); }
   function monthInfo(key) {
     var now = new Date(), isCurrent = key === monthKey(now), p = key.split("-"), dim = new Date(+p[0], +p[1], 0).getDate();
@@ -899,7 +904,8 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     var fixedT = sum(list.filter(function (it) { return it.fixed; })), varT = total - fixedT, varN = list.length - list.filter(function (it) { return it.fixed; }).length;
     var prevT = sum(allItems(shiftMonth(viewKey, -1)));
     var h = "", stats = [], tips = [], stamp = null;
-        var budget = tab === "todos" ? houseBudget(viewKey) : (s.allowance[tab] || 0);
+        var budget = tab === "todos" ? houseBudget(viewKey) : personBudget(viewKey, tab);
+    var missing = PEOPLE.filter(function (p) { return (tab === "todos" || tab === p) && incomeFor(viewKey, p) <= 0; });
     var left = budget - total, over = budget > 0 && left < 0;
     // Los fijos no se "proyectan": ya se sabe cuánto son. Solo los otros gastos siguen el ritmo diario.
     var proj = mi.isCurrent && varT > 0 && mi.day < mi.dim ? fixedT + varT / mi.day * mi.dim : null;
@@ -925,9 +931,14 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     h += '<div class="legend soft"><span>' + icon("repeat") + 'Fijos ' + money(fixedT) + '</span><span>' + icon("receipt") + 'Otros gastos ' + money(varT) + '</span></div>';
     h += '<hr class="perforated">';
 
-    if (budget > 0 && mi.isCurrent) {
-      var daysLeft = mi.dim - mi.day + 1;
-      stats.push([tab === "todos" ? 'Pueden gastar al día' : 'Puede gastar al día', money(Math.max(0, left) / daysLeft), 'por los ' + daysLeft + ' día' + (daysLeft === 1 ? '' : 's') + ' que quedan']);
+    var todos = tab === "todos";
+    if (budget > 0 && (mi.isCurrent || mi.future)) {
+      var daysLeft = mi.future ? mi.dim : mi.dim - mi.day + 1;
+      stats.push([(mi.future ? (todos ? 'Podrán' : 'Podrá') : (todos ? 'Pueden' : 'Puede')) + ' gastar al día', money(Math.max(0, left) / daysLeft),
+        left > 0 ? 'por los ' + daysLeft + ' día' + (daysLeft === 1 ? '' : 's') + (mi.future ? ' del mes, después de fijos y ahorro' : ' que quedan, después de fijos y ahorro')
+                 : 'ya no queda: ' + (todos ? 'se pasaron' : 'se pasó') + ' por ' + money(-left)]);
+    } else if (mi.isCurrent || mi.future) {
+      stats.push([todos ? 'Pueden gastar al día' : 'Puede gastar al día', '—', 'falta anotar ' + (missing.length ? 'lo que ganó ' + missing.map(name).join(' y ') : 'lo que ganan')]);
     }
     if (proj != null) stats.push(['A este ritmo, a fin de mes', money(proj), budget > 0 ? (proj > budget ? (tab === "todos" ? 'se pasarían por ' : 'se pasaría por ') + money(proj - budget) : (tab === "todos" ? 'sobrarían ' : 'le sobrarían ') + money(budget - proj)) : 'si siguen igual']);
     if (tab === "todos" && incomeTotal(viewKey) > 0) {
@@ -949,8 +960,13 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
       if (over || (proj != null && proj > budget)) stamp = ["bad", "¡Ojo con<br>el gasto!"];
       else if (!mi.isCurrent || mi.day >= 7) stamp = ["good", mi.isCurrent ? "¡Vamos<br>bien!" : "Meta<br>cumplida"];
     }
+    if (budget > 0 && missing.length && tab === "todos") tips.push('Falta anotar lo que ganó <b>' + missing.map(function (p) { return esc(name(p)); }).join(' y ') + '</b> en ' + esc(monthName(viewKey)) + '. Sus gastos ya cuentan, pero su sueldo todavía no, por eso parece que no alcanza. Anótalo arriba en <b>Lo que ganamos</b>.');
     if (tab === "todos" && budget <= 0) tips.push('Anoten arriba, en <b>Lo que ganamos</b>, lo que cobró cada quien este mes. Así la app les dice cuánto les queda y cuánto pueden gastar cada día.');
-    else if (tab !== "todos" && budget <= 0) tips.push('Pongan en <b>Ingresos, ahorro y límites</b> cuánto puede gastar ' + esc(name(tab)) + ' al mes en sus cosas, y aquí verá cuánto le queda.');
+    else if (tab !== "todos" && budget <= 0) tips.push('Anota arriba lo que ganó ' + esc(name(tab)) + ' este mes y aquí verá cuánto le queda y cuánto puede gastar al día.');
+    if (tab !== "todos" && (s.allowance[tab] || 0) > 0) {
+      var over2 = wantT > s.allowance[tab];
+      tips.push((over2 ? '<b>Se pasó del límite de gustos:</b> ' : 'Gustos de ' + esc(name(tab)) + ': ') + money(wantT) + ' de ' + money(s.allowance[tab]) + (over2 ? '' : ' (le quedan ' + money(s.allowance[tab] - wantT) + ')') + '.');
+    }
     if (total > 0 && wantT / total > 0.3) tips.push('Más del 30% de lo que ' + (tab === "todos" ? 'gastaron' : 'gastó ' + esc(name(tab))) + ' son gustos. Recortarlos a la mitad dejaría ' + money(wantT / 2) + ' extra para el ahorro.');
     h += tips.map(tipHtml).join("");
     if (stamp) h += '<div class="stamp ' + stamp[0] + '">' + stamp[1] + '</div>';
@@ -1136,7 +1152,7 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
       return '<fieldset><legend>' + avatar(p, true) + esc(name(p)) + '</legend>' +
         '<div class="field"><label class="label" for="name-' + p + '">Nombre</label><input type="text" id="name-' + p + '" maxlength="24"></div>' +
         '<div class="field"><label class="label" for="inc-' + p + '">Ingreso aproximado al mes</label><input type="number" min="0" step="0.01" id="inc-' + p + '" inputmode="decimal"></div>' +
-        '<div class="field"><label class="label" for="allow-' + p + '">Límite para sus gastos personales</label><input type="number" min="0" step="0.01" id="allow-' + p + '" inputmode="decimal" placeholder="Sin límite"></div></fieldset>';
+        '<div class="field"><label class="label" for="allow-' + p + '">Límite para sus gustos al mes</label><input type="number" min="0" step="0.01" id="allow-' + p + '" inputmode="decimal" placeholder="Sin límite"></div></fieldset>';
     }).join("");
     fillSettings();
   }
