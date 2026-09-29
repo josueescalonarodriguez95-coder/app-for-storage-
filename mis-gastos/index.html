@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,500..800,100;1,9..144,500,100&family=Karla:wght@400;500;700&family=Courier+Prime:wght@400;700&display=swap">
 <style>
-/* Layout: libreta de cuentas de los 70 — pestañas por persona arriba, recibo del mes, y a los lados anotar y repasar. Papel, tinta café y pasteles de cocina retro. */
+/* Layout: libreta de cuentas de los 70 (solo tema claro, a propósito) — pestañas por persona arriba, recibo del mes, y a los lados anotar y repasar. Papel, tinta café y pasteles de cocina retro. */
 :root {
   --paper: #EBE0CC;   /* beige */
   --card: #F8F2E6;    /* hueso */
@@ -32,18 +32,7 @@
   --font-body: "Karla", "Avenir Next", system-ui, sans-serif;
   --font-num: "Courier Prime", "Courier New", ui-monospace, monospace;
   --r: 16px;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper: #221D26; --card: #2B2530; --ink: #F3E9DC; --ink-soft: #B6A9B8; --rule: #3F3645; --shadow: #17131A; --track: #3A3240;
-    --p1: #7FA6D6; --p2: #DB8FA5; --casa: #86BE9C; --need: #7DB3A6; --want: #DE8C7E;
-    --good: #8FD3AC; --good-soft: #28392F; --bad: #F08F95; --bad-soft: #44282C; --butter: #D9BD66; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --paper: #221D26; --card: #2B2530; --ink: #F3E9DC; --ink-soft: #B6A9B8; --rule: #3F3645; --shadow: #17131A; --track: #3A3240;
-  --p1: #7FA6D6; --p2: #DB8FA5; --casa: #86BE9C; --need: #7DB3A6; --want: #DE8C7E;
-  --good: #8FD3AC; --good-soft: #28392F; --bad: #F08F95; --bad-soft: #44282C; --butter: #D9BD66; color-scheme: dark;
+  color-scheme: light;   /* siempre claro, aunque la compu esté en modo oscuro */
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
