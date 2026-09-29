@@ -16,6 +16,9 @@ Arriba de todo, cada quien elige cada cuánto cobra (**semanal**, **quincenal** 
 (semana 1–5, 1ª y 2ª quincena, o el pago del mes) más extras o bonos. La app suma todo y muestra
 lo que ganaron en el mes, lo gastado y lo que sobra. La frecuencia se recuerda para los meses siguientes.
 
+En **Trabajos extra o negocio** se suman ingresos aparte (una mudanza, una venta…) con su descripción y cantidad.
+También cuentan para lo que sobra y para lo que pueden gastar al día.
+
 ## Gastos fijos
 
 Renta, carro, internet, teléfono, seguros… se ponen una vez y **aparecen solos cada mes**, separados de los demás gastos.

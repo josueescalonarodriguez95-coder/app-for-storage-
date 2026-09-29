@@ -232,6 +232,18 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
 .inc-slots .field { gap: 4px; }
 .inc-slots .label { font-size: 0.66rem; }
 .inc-slots input { font-family: var(--font-num); }
+.side-inc { display: grid; gap: 6px; border-top: 2px dashed var(--rule); padding-top: 10px; }
+.side-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 8px; align-items: center; font-size: 0.92rem; }
+.side-row .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side-row .num { color: var(--good); font-weight: 700; }
+.side-row .ic-coin { color: var(--good); }
+.x-btn { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--rule); background: transparent; display: grid; place-items: center; color: var(--ink-soft); transition: transform .15s, color .15s, border-color .15s; }
+.x-btn:hover { color: var(--bad); border-color: var(--bad); transform: rotate(90deg); }
+.x-btn svg.i { width: 13px; height: 13px; stroke-width: 2; }
+.side-add { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: 6px; }
+.side-add input { padding: 7px 9px; }
+@media (max-width: 480px) { .side-add { grid-template-columns: minmax(0, 1fr) auto; } .side-add input[type="text"] { grid-column: 1 / -1; } }
+.side-add input[type="number"] { font-family: var(--font-num); }
 .inc-slots input.filled { border-color: var(--good); background: var(--good-soft); }
 
 /* Gastos fijos: se repiten solos cada mes */
@@ -423,6 +435,8 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     gym: '<path d="M6.5 7v10M17.5 7v10M3.5 9.5v5M20.5 9.5v5M6.5 12h11"/>',
     seguros: '<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
     repeat: '<path d="M4 11V9a3 3 0 0 1 3-3h12M16 3l3 3-3 3M20 13v2a3 3 0 0 1-3 3H5M8 21l-3-3 3-3"/>',
+    coin: '<circle cx="12" cy="12" r="8.5"/><path d="M14.5 9.2c-.5-.8-1.4-1.2-2.5-1.2-1.5 0-2.5.8-2.5 1.9 0 2.6 5.2 1.4 5.2 4.1 0 1.1-1.1 2-2.7 2-1.2 0-2.2-.5-2.7-1.3M12 6.5V8M12 16v1.5"/>',
+    x: '<path d="M6 6l12 12M18 6L6 18"/>',
     check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
     otros: '<circle cx="6" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18" cy="12" r="1.2"/>',
     casa: '<path d="M4 11l8-7 8 7M6 9.5V20h12V9.5"/><path d="M12 17s-3-1.8-3-4a1.6 1.6 0 0 1 3-1 1.6 1.6 0 0 1 3 1c0 2.2-3 4-3 4z"/>',
@@ -583,7 +597,9 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
   };
   function normIncome(d) {
     d = d || {};
-    return { freq: FREQ[d.freq] ? d.freq : null, pays: (Array.isArray(d.pays) ? d.pays : []).slice(0, 5).map(function (v) { return round2(num(v)); }), extra: round2(num(d.extra)) };
+    return { freq: FREQ[d.freq] ? d.freq : null, pays: (Array.isArray(d.pays) ? d.pays : []).slice(0, 5).map(function (v) { return round2(num(v)); }), extra: round2(num(d.extra)),
+      side: (Array.isArray(d.side) ? d.side : []).filter(function (x) { return x && num(x.amount) > 0; }).slice(0, 100)
+        .map(function (x) { return { id: String(x.id || uid()), amount: round2(num(x.amount)), note: String(x.note || "").slice(0, 60) }; }) };
   }
   function freqFor(m, p) {
     var doc = state.income[m + "_" + p];
@@ -594,10 +610,16 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
   }
   function earned(m, p) {
     var doc = state.income[m + "_" + p]; if (!doc) return 0;
+    return round2(salary(m, p) + sideTotal(m, p));
+  }
+  // Sueldo = pagos del trabajo + bonos. Aparte, lo de trabajos extra o negocio.
+  function salary(m, p) {
+    var doc = state.income[m + "_" + p]; if (!doc) return 0;
     var n = FREQ[freqFor(m, p)].slots.length, t = doc.extra || 0;
     for (var i = 0; i < n; i++) t += doc.pays[i] || 0;
     return round2(t);
   }
+  function sideTotal(m, p) { var doc = state.income[m + "_" + p]; return doc ? round2(sum(doc.side || [])) : 0; }
   // Si aún no anotan lo cobrado, se usa el aproximado de Ajustes.
   function incomeFor(m, p) { var e = earned(m, p); return e > 0 ? e : (state.settings.income[p] || 0); }
   function incomeIsReal(m, p) { return earned(m, p) > 0; }
@@ -760,9 +782,10 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     var people = tab === "todos" ? PEOPLE : [tab], m = viewKey;
     var won = 0, real = true, spent = tab === "todos" ? sum(allItems(m, "todos")) : spentBy(m, tab);
     people.forEach(function (p) { won += incomeFor(m, p); if (!incomeIsReal(m, p)) real = false; });
-    var left = won - spent, mn = esc(monthName(m));
+    var left = won - spent, mn = esc(monthName(m)), sal = 0, side = 0;
+    people.forEach(function (p) { sal += salary(m, p); side += sideTotal(m, p); });
     return '<div class="inc-total"><span class="label">' + (tab === "todos" ? 'Ganaron en ' : 'Ganó ' + esc(name(tab)) + ' en ') + mn + '</span><span class="num" id="incSum">' + money(won) + '</span></div>' +
-      '<div class="inc-chips">' + (won > 0 && !real ? '<span class="chip">aproximado · falta anotar lo cobrado</span>' : '') +
+      '<div class="inc-chips">' + (side > 0 ? '<span class="chip">Sueldo <b>' + money(sal) + '</b></span><span class="chip good">+ Trabajos extra <b>' + money(side) + '</b></span>' : '') + (won > 0 && !real ? '<span class="chip">aproximado · falta anotar lo cobrado</span>' : '') +
       '<span class="chip">Gastado <b>' + money(spent) + '</b></span>' +
       (won > 0 ? '<span class="chip ' + (left >= 0 ? 'good' : 'bad') + '">' + (left >= 0 ? 'Sobra ' : 'Faltan ') + '<b>' + money(Math.abs(left)) + '</b></span>' : '') +
       (tab === "todos" && state.settings.savingsGoal > 0 && won > 0 ? '<span class="chip">Meta de ahorro <b>' + money(state.settings.savingsGoal) + '</b></span>' : '') + '</div>';
@@ -788,7 +811,15 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
           var v = doc.pays[i] || "";
           return '<div class="field"><label class="label" for="pay-' + p + '-' + i + '">' + lab + '</label><input type="number" min="0" step="0.01" inputmode="decimal" id="pay-' + p + '-' + i + '" data-p="' + p + '" data-i="' + i + '" value="' + v + '" placeholder="0.00"' + (v ? ' class="filled"' : '') + (readOnly ? ' disabled' : '') + '></div>';
         }).join("") +
-        '<div class="field"><label class="label" for="pay-' + p + '-x">Extra / bonos</label><input type="number" min="0" step="0.01" inputmode="decimal" id="pay-' + p + '-x" data-p="' + p + '" data-i="x" value="' + (doc.extra || "") + '" placeholder="0.00"' + (doc.extra ? ' class="filled"' : '') + (readOnly ? ' disabled' : '') + '></div>' +
+        '<div class="field"><label class="label" for="pay-' + p + '-x">Bonos</label><input type="number" min="0" step="0.01" inputmode="decimal" id="pay-' + p + '-x" data-p="' + p + '" data-i="x" value="' + (doc.extra || "") + '" placeholder="0.00"' + (doc.extra ? ' class="filled"' : '') + (readOnly ? ' disabled' : '') + '></div>' +
+        '</div><div class="side-inc"><span class="label">Trabajos extra o negocio' + (doc.side && doc.side.length ? ' · <span class="num">' + money(sum(doc.side)) + '</span>' : '') + '</span>' +
+        (doc.side || []).map(function (x) {
+          return '<div class="side-row"><span class="ic-coin">' + icon("coin") + '</span><span class="t">' + esc(x.note || "Ingreso extra") + '</span><span class="num">+' + money(x.amount) + '</span>' +
+            (readOnly ? '<span></span>' : '<button type="button" class="x-btn" data-side-del="' + esc(x.id) + '" data-sp="' + p + '" aria-label="Borrar ' + esc(x.note || "ingreso extra") + '">' + icon("x") + '</button>') + '</div>';
+        }).join("") +
+        (readOnly ? '' : '<div class="side-add"><input type="text" id="sideNote-' + p + '" maxlength="60" placeholder="¿De qué? Ej. mudanza" aria-label="Descripción del ingreso extra de ' + esc(name(p)) + '">' +
+          '<input type="number" min="0" step="0.01" inputmode="decimal" id="sideAmt-' + p + '" placeholder="0.00" aria-label="Cantidad del ingreso extra de ' + esc(name(p)) + '">' +
+          '<button type="button" class="btn small" data-side-add="' + p + '"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Sumar</button></div>') +
         '</div></div>';
     });
     el.innerHTML = h + '</div>';
@@ -811,10 +842,34 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     if (save) persistIncome(k);
     renderTabs(); $("incTop").innerHTML = incomeTotalsHtml(); updateIncomeSubtotals(); renderSummary();
   }
-  $("incomeCard").addEventListener("input", function (e) { if (e.target.type === "number") incomeInput(e.target, false); });
+  $("incomeCard").addEventListener("input", function (e) { if (e.target.hasAttribute("data-i")) incomeInput(e.target, false); });
+  function addSide(p) {
+    if (readOnly || mode === "loading") return;
+    var a = $("sideAmt-" + p), n = $("sideNote-" + p), amt = round2(num(a.value));
+    if (!(amt > 0)) { toast("Escribe cuánto te pagaron."); a.focus(); return; }
+    var k = viewKey + "_" + p, doc = state.income[k] = state.income[k] || normIncome(null);
+    if (!doc.freq) doc.freq = freqFor(viewKey, p);
+    doc.side = (doc.side || []).concat([{ id: uid(), amount: amt, note: n.value.trim().slice(0, 60) }]);
+    persistIncome(k); $("incomeCard").setAttribute("data-key", ""); render();
+    toast("+" + money(amt) + " para " + name(p));
+  }
+  $("incomeCard").addEventListener("click", function (e) {
+    var add = e.target.closest("[data-side-add]"), del = e.target.closest("[data-side-del]");
+    if (add) addSide(add.getAttribute("data-side-add"));
+    else if (del && !readOnly) {
+      var p = del.getAttribute("data-sp"), k = viewKey + "_" + p, doc = state.income[k]; if (!doc) return;
+      doc.side = doc.side.filter(function (x) { return x.id !== del.getAttribute("data-side-del"); });
+      persistIncome(k); $("incomeCard").setAttribute("data-key", ""); render(); toast("Ingreso extra borrado");
+    }
+  });
+  $("incomeCard").addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    var m = e.target.id && e.target.id.match(/^side(?:Amt|Note)-(p[12])$/);
+    if (m) { e.preventDefault(); addSide(m[1]); }
+  });
   $("incomeCard").addEventListener("change", function (e) {
     var t = e.target;
-    if (t.type === "number") { incomeInput(t, true); if (t.value) toast("Anotado: " + money(round2(num(t.value))) + " · " + name(t.getAttribute("data-p"))); }
+    if (t.hasAttribute("data-i")) { incomeInput(t, true); if (t.value) toast("Anotado: " + money(round2(num(t.value))) + " · " + name(t.getAttribute("data-p"))); }
     else if (t.type === "radio" && !readOnly) {
       var p = t.getAttribute("data-p"), k = viewKey + "_" + p, doc = state.income[k] = state.income[k] || normIncome(null);
       doc.freq = t.value; persistIncome(k); el0().setAttribute("data-key", ""); render();
@@ -1190,7 +1245,8 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
       PEOPLE.forEach(function (p) {
         var doc = state.income[k + "_" + p]; if (!doc) return;
         FREQ[freqFor(k, p)].slots.forEach(function (lab, i) { if (doc.pays[i]) rows.push([k + "-01", name(p), "", "Sueldo", "Ingreso", lab, "", doc.pays[i].toFixed(2)]); });
-        if (doc.extra) rows.push([k + "-01", name(p), "", "Sueldo", "Ingreso", "Extra / bonos", "", doc.extra.toFixed(2)]);
+        if (doc.extra) rows.push([k + "-01", name(p), "", "Sueldo", "Ingreso", "Bonos del trabajo", "", doc.extra.toFixed(2)]);
+        (doc.side || []).forEach(function (x) { rows.push([k + "-01", name(p), "", "Trabajo extra / negocio", "Ingreso", x.note || "Ingreso extra", "", x.amount.toFixed(2)]); });
       });
       fixedRows(k, "todos").forEach(function (r) {
         rows.push([k + "-01", name(r.who), "", (CAT[r.cat] || CAT.otros).n, "Fijo" + (r.paid ? " (pagado)" : ""), r.f.name, "", r.amount.toFixed(2)]);
