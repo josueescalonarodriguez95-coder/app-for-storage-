@@ -28,6 +28,7 @@
   --bad: #C0515A;
   --bad-soft: #FBE1E1;
   --butter: #F6DE95;
+  --note: #9A5B2E;
   --font-display: "Fraunces", "Cooper Black", Georgia, serif;
   --font-body: "Karla", "Avenir Next", system-ui, sans-serif;
   --font-num: "Courier Prime", "Courier New", ui-monospace, monospace;
@@ -211,6 +212,32 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
 .toast { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%) rotate(-1deg); background: var(--butter); color: #3E3346; border: 1.5px solid #3E3346; box-shadow: 3px 3px 0 var(--shadow); padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.92rem; max-width: calc(100% - 32px); z-index: 5; }
 .file-btn { position: relative; overflow: hidden; }
 .file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+/* Gastos fijos: se repiten solos cada mes */
+.fx-group { display: grid; gap: 2px; }
+.fx-head { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--ink-soft); padding: 10px 0 4px; border-bottom: 2px dashed var(--rule); }
+.fx-head .num { margin-left: auto; }
+.fx-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 7px 4px; border-radius: 12px; transition: background .15s; }
+.fx-row:hover { background: var(--track); }
+.fx-row:hover .disc { transform: rotate(-10deg); }
+.fx-row .disc { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--c); border: 1.5px solid var(--ink); color: #3E3346; transition: transform .2s; }
+.fx-row .disc svg.i { width: 18px; height: 18px; }
+.fx-main { border: 0; background: none; text-align: left; padding: 0; min-width: 0; }
+.fx-main .t { display: block; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fx-main .s { display: block; font-size: 0.76rem; color: var(--ink-soft); }
+.fx-main .s.chg { color: var(--note); font-weight: 700; }
+.fx-row.paid .fx-main .t { text-decoration: line-through; text-decoration-color: var(--ink-soft); }
+.fx-row.paid > .num { color: var(--ink-soft); }
+.fx-row.skipped { opacity: .55; }
+.fx-row.skipped > .num { text-decoration: line-through; }
+.paid-btn { width: 32px; height: 32px; border-radius: 50%; border: 1.5px dashed var(--ink-soft); background: transparent; display: grid; place-items: center; color: transparent; transition: background .15s, color .15s, border-color .15s; }
+.paid-btn svg.i { width: 17px; height: 17px; stroke-width: 2.2; }
+.paid-btn:hover { border-style: solid; border-color: var(--ink); color: var(--ink-soft); }
+.paid-btn[aria-pressed="true"] { background: var(--good); border: 1.5px solid var(--good); color: var(--card); }
+.paid-btn[aria-pressed="true"] svg.i { animation: pop .35s cubic-bezier(.3,1.8,.5,1); }
+.restore { font-size: 0.8rem; }
+.fx-edit { background: var(--track); border-radius: 12px; padding: 14px; display: grid; gap: 10px; margin: 4px 0 8px; }
+.fx-edit .actions .btn:first-child { flex: 1 1 100%; }
+.legend svg.i { width: 15px; height: 15px; }
 @media (prefers-reduced-motion: no-preference) { .meter i, .cat-row .bar i { transition: width .5s ease; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 @media (max-width: 480px) {
@@ -250,7 +277,7 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
 
   <div class="cols">
     <section class="card">
-      <div class="card-head"><h2 id="formTitle">Anotar un gasto</h2><span class="hint">Anótalo en cuanto pagues</span></div>
+      <div class="card-head"><h2 id="formTitle">Anotar un gasto</h2><span class="hint">Los fijos ya se anotan solos</span></div>
       <form id="form" autocomplete="off">
         <div class="field">
           <label class="label" for="amount">Cuánto</label>
@@ -287,12 +314,18 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     </section>
 
     <div class="side">
+      <section class="card" id="fixedCard">
+        <div class="card-head"><h2>Gastos fijos</h2><span class="hint" id="fixedHint"></span></div>
+        <p class="hint">Se repiten solos cada mes. Toca uno para cambiar el monto; toca el círculo cuando ya esté pagado.</p>
+        <div id="fixedList"></div>
+        <div class="actions"><button class="btn ghost small" type="button" id="fixedAdd"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Agregar gasto fijo</button></div>
+      </section>
       <section class="card">
         <div class="card-head"><h2>A dónde se fue el dinero</h2><span class="hint" id="catHint"></span></div>
         <div class="cats" id="cats"></div>
       </section>
       <section class="card">
-        <div class="card-head"><h2>Movimientos</h2>
+        <div class="card-head"><h2>Otros gastos</h2>
           <select id="filter" aria-label="Filtrar por categoría" style="width:auto"></select>
         </div>
         <div id="list"></div>
@@ -363,6 +396,10 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     familia: '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15.5 14.5c3 0 5.5 2 5.5 5.5"/>',
     escuela: '<path d="M4 5h5a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H4zM20 5h-5a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h6z"/>',
     mascotas: '<circle cx="12" cy="15.5" r="3.5"/><circle cx="6" cy="10" r="1.8"/><circle cx="18" cy="10" r="1.8"/><circle cx="9.5" cy="6" r="1.6"/><circle cx="14.5" cy="6" r="1.6"/>',
+    gym: '<path d="M6.5 7v10M17.5 7v10M3.5 9.5v5M20.5 9.5v5M6.5 12h11"/>',
+    seguros: '<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+    repeat: '<path d="M4 11V9a3 3 0 0 1 3-3h12M16 3l3 3-3 3M20 13v2a3 3 0 0 1-3 3H5M8 21l-3-3 3-3"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
     otros: '<circle cx="6" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18" cy="12" r="1.2"/>',
     casa: '<path d="M4 11l8-7 8 7M6 9.5V20h12V9.5"/><path d="M12 17s-3-1.8-3-4a1.6 1.6 0 0 1 3-1 1.6 1.6 0 0 1 3 1c0 2.2-3 4-3 4z"/>',
     todos: '<circle cx="9" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M3.5 19c0-3 2.5-5 5.5-5 1.3 0 2.4.4 3 .9.6-.5 1.7-.9 3-.9 3 0 5.5 2 5.5 5"/>',
@@ -382,7 +419,9 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     { id: "servicios", n: "Luz, agua, internet", c: "#F6DE95" },
     { id: "telefono", n: "Teléfono", c: "#B7CFEE" },
     { id: "transporte", n: "Transporte", c: "#A7D3E0" },
-    { id: "gasolina", n: "Gasolina / auto", c: "#CDBCE8" },
+    { id: "gasolina", n: "Carro / gasolina", c: "#CDBCE8" },
+    { id: "seguros", n: "Seguros", c: "#C4D7E0" },
+    { id: "gym", n: "Gimnasio", c: "#F0C6A0" },
     { id: "salud", n: "Salud", c: "#F4B3BF" },
     { id: "ropa", n: "Ropa", c: "#EACBAA" },
     { id: "diversion", n: "Diversión", c: "#F9D48A" },
@@ -399,13 +438,15 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
   var LOCAL_KEY = "nuestras-cuentas-v2", OLD_LOCAL_KEY = "mis-gastos-v1", ME_KEY = "nuestras-cuentas-yo", TAB_KEY = "nuestras-cuentas-tab";
   var DEFAULT_SETTINGS = { currency: "USD", names: { p1: "Josué", p2: "Roxana" }, income: { p1: 0, p2: 0 }, allowance: { p1: 0, p2: 0 }, savingsGoal: 0, budget: 0, limits: {} };
 
-  var state = { settings: normSettings(null), docs: {}, migrated: {} };
+  var state = { settings: normSettings(null), docs: {}, migrated: {}, fixed: { items: [], months: {} } };
   var mode = "loading", readOnly = false, uidSelf = null;
   var viewKey = monthKey(new Date());
   var editingId = null, confirmDelete = false, filterCat = "", freshId = null;
   var me = lsGet(ME_KEY); if (PEOPLE.indexOf(me) < 0) me = null;
   var tab = lsGet(TAB_KEY); if (["todos", "p1", "p2"].indexOf(tab) < 0) tab = "todos";
-  var db = null, configRef = null, monthsCol = null, downloads = null;
+  var db = null, configRef = null, monthsCol = null, fixedRef = null, downloads = null;
+  var editingFixed = null; // id del gasto fijo abierto, o "new"
+
 
   var $ = function (id) { return document.getElementById(id); };
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -473,15 +514,52 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     return Object.keys(changed);
   }
 
+  // Gastos fijos: una plantilla por gasto con su historial de montos ({from: "2026-10", amount}),
+  // así si el precio cambia "desde este mes", los meses anteriores quedan como estaban.
+  // months["2026-10"][id] guarda lo de ese mes: {amount} si cambió solo ese mes, {paid}, {skip}.
+  function normFixed(d) {
+    d = d || {};
+    var items = (Array.isArray(d.items) ? d.items : []).filter(function (f) { return f && f.id && /^\d{4}-\d{2}$/.test(f.from) && Array.isArray(f.amounts) && f.amounts.length; })
+      .map(function (f) {
+        return { id: String(f.id), name: String(f.name || "Gasto fijo").slice(0, 60), cat: CAT[f.cat] ? f.cat : "otros", who: WHO.indexOf(f.who) >= 0 ? f.who : "p1",
+          kind: f.kind === "want" ? "want" : "need", from: f.from, until: /^\d{4}-\d{2}$/.test(f.until) ? f.until : null,
+          amounts: f.amounts.filter(function (a) { return a && /^\d{4}-\d{2}$/.test(a.from); }).map(function (a) { return { from: a.from, amount: round2(num(a.amount)) }; }) };
+      });
+    return { items: items, months: d.months && typeof d.months === "object" ? clone(d.months) : {} };
+  }
+  function fixedBase(f, m) { var best = null; f.amounts.forEach(function (a) { if (a.from <= m && (!best || a.from >= best.from)) best = a; }); return best ? best.amount : 0; }
+  function fixedRows(m, t, withSkipped) {
+    t = t || tab;
+    var ov = state.fixed.months[m] || {};
+    return state.fixed.items.filter(function (f) { return f.from <= m && (!f.until || m <= f.until) && (t === "todos" || f.who === t); })
+      .map(function (f) {
+        var o = ov[f.id] || {}, base = fixedBase(f, m), amt = o.amount != null ? o.amount : base;
+        return { id: "fx_" + f.id, fid: f.id, f: f, fixed: true, amount: amt, base: base, changed: o.amount != null && o.amount !== base,
+          paid: !!o.paid, skip: !!o.skip, cat: f.cat, kind: f.kind, who: f.who, note: f.name };
+      })
+      .filter(function (r) { return withSkipped || !r.skip; });
+  }
+  function allItems(m, t) { return viewItems(m, t).concat(fixedRows(m, t)); }
+  function monthOv(m, fid) { var mo = state.fixed.months[m] = state.fixed.months[m] || {}; return mo[fid] = mo[fid] || {}; }
+  function tidyOv(m, fid) {
+    var mo = state.fixed.months[m]; if (!mo) return;
+    if (mo[fid] && !Object.keys(mo[fid]).length) delete mo[fid];
+    if (!Object.keys(mo).length) delete state.fixed.months[m];
+  }
+  function persistFixed() {
+    if (mode === "db") queueWrite("fx", function () { return fixedRef.set({ items: state.fixed.items, months: state.fixed.months, updatedAt: Date.now() }); });
+    else saveLocal();
+  }
+
   // ---------- guardado ----------
   function saveLocal() {
-    try { localStorage.setItem(LOCAL_KEY, JSON.stringify({ settings: state.settings, docs: state.docs })); }
+    try { localStorage.setItem(LOCAL_KEY, JSON.stringify({ settings: state.settings, docs: state.docs, fixed: state.fixed })); }
     catch (e) { toast("No se pudo guardar en este navegador. Descarguen un respaldo."); }
   }
   function loadLocal() {
     try {
       var raw = localStorage.getItem(LOCAL_KEY);
-      if (raw) { var d = JSON.parse(raw); state.settings = normSettings(d.settings); state.docs = d.docs || {}; return; }
+      if (raw) { var d = JSON.parse(raw); state.settings = normSettings(d.settings); state.docs = d.docs || {}; state.fixed = normFixed(d.fixed); return; }
       var old = localStorage.getItem(OLD_LOCAL_KEY);
       if (old) { migrateV1(JSON.parse(old)); saveLocal(); }
     } catch (e) {}
@@ -526,10 +604,11 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
   function startDb() {
     configRef = db.doc("hogar/config");
     monthsCol = db.collection("meses");
-    var gotC = false, gotM = false, cfgExists = false;
+    fixedRef = db.doc("hogar/fijos");
+    var gotC = false, gotM = false, gotF = false, cfgExists = false;
     function ready() {
       render();
-      if (gotC && gotM && mode !== "db") { mode = "db"; setStatus(); render(); migrateDb(cfgExists); }
+      if (gotC && gotM && gotF && mode !== "db") { mode = "db"; setStatus(); render(); migrateDb(cfgExists); }
     }
     configRef.onSnapshot(function (snap) {
       if (!running.cfg) {
@@ -547,6 +626,10 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
         state.docs[doc.id] = d && Array.isArray(d.items) ? clone(d.items) : [];
       });
       gotM = true; ready();
+    }, dbFailed);
+    fixedRef.onSnapshot(function (snap) {
+      if (!running.fx) state.fixed = normFixed(snap.exists ? snap.data() : null);
+      gotF = true; ready();
     }, dbFailed);
   }
   // Trae lo que se anotó en la primera versión (guardada en privado para quien la usaba) al espacio compartido.
@@ -598,11 +681,11 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
   function render() {
     $("monthLabel").textContent = cap(monthName(viewKey));
     $("curSym").textContent = curSymbol();
-    renderTabs(); renderSummary(); renderCats(); renderList();
+    renderTabs(); renderSummary(); renderFixed(); renderCats(); renderList();
   }
 
   function renderTabs() {
-    var all = monthItems(viewKey);
+    var all = allItems(viewKey, "todos");
     $("tabs").innerHTML = ["todos", "p1", "p2"].map(function (t) {
       var total = sum(t === "todos" ? all : all.filter(function (it) { return it.who === t; }));
       var av = t === "todos" ? '<span class="av" style="background:var(--butter)" aria-hidden="true">' + icon("todos") + '</span>' : avatar(t);
@@ -622,13 +705,15 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
   function renderSummary() {
     var el = $("summary");
     if (mode === "loading") { el.innerHTML = '<div class="soft">Abriendo la libreta…</div>'; return; }
-    var list = viewItems(viewKey), total = sum(list), mi = monthInfo(viewKey), s = state.settings;
+    var list = allItems(viewKey), total = sum(list), mi = monthInfo(viewKey), s = state.settings;
     var wantT = sum(list.filter(function (it) { return it.kind === "want"; }));
-    var prevT = sum(viewItems(shiftMonth(viewKey, -1)));
+    var fixedT = sum(list.filter(function (it) { return it.fixed; })), varT = total - fixedT, varN = list.length - list.filter(function (it) { return it.fixed; }).length;
+    var prevT = sum(allItems(shiftMonth(viewKey, -1)));
     var h = "", stats = [], tips = [], stamp = null;
         var budget = tab === "todos" ? houseBudget() : (s.allowance[tab] || 0);
     var left = budget - total, over = budget > 0 && left < 0;
-    var proj = mi.isCurrent && total > 0 && mi.day < mi.dim ? total / mi.day * mi.dim : null;
+    // Los fijos no se "proyectan": ya se sabe cuánto son. Solo los otros gastos siguen el ritmo diario.
+    var proj = mi.isCurrent && varT > 0 && mi.day < mi.dim ? fixedT + varT / mi.day * mi.dim : null;
 
     h += '<div class="big"><span class="label" style="width:100%">' + (tab === "todos" ? 'Gastaron los dos en ' : 'Gastó ' + esc(name(tab)) + ' en ') + esc(monthName(viewKey)) + '</span>' +
       '<span class="num">' + money(total) + '</span>';
@@ -648,6 +733,7 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
         (wantT > 0 ? '<i style="background:var(--want);width:' + (wantT / scale * 100) + '%"></i>' : '') + '</div>';
       h += '<div class="legend">' + needWantLegend(list) + '</div>';
     }
+    h += '<div class="legend soft"><span>' + icon("repeat") + 'Fijos ' + money(fixedT) + '</span><span>' + icon("receipt") + 'Otros gastos ' + money(varT) + '</span></div>';
     h += '<hr class="perforated">';
 
     if (budget > 0 && mi.isCurrent) {
@@ -660,10 +746,10 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
       stats.push([mi.isCurrent ? 'Ahorro que llevan' : 'Ahorraron', money(saved), s.savingsGoal > 0 ? 'meta: ' + money(s.savingsGoal) : 'ingresos menos gastos']);
     }
     if (tab !== "todos") {
-      var shared = sum(monthItems(viewKey).filter(function (it) { return it.who !== "casa"; }));
+      var shared = sum(allItems(viewKey, "todos").filter(function (it) { return it.who !== "casa"; }));
       if (shared > 0) stats.push(['De lo personal', Math.round(total / shared * 100) + '%', 'de lo que gastaron los dos en sus cosas']);
     }
-    stats.push(['Promedio por día', money(total / (mi.day || 1)), list.length + ' gasto' + (list.length === 1 ? '' : 's') + ' anotado' + (list.length === 1 ? '' : 's')]);
+    stats.push(['Otros gastos al día', money(varT / (mi.day || 1)), varN + ' gasto' + (varN === 1 ? '' : 's') + ' anotado' + (varN === 1 ? '' : 's') + ', sin contar fijos']);
     if (prevT > 0) { var diff = total - prevT; stats.push(['Contra el mes pasado', (diff > 0 ? '+' : '') + money(diff), 'el mes pasado: ' + money(prevT)]); }
     h += '<div class="stats">' + stats.map(statHtml).join("") + '</div>';
 
@@ -682,7 +768,7 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
   function renderCats() {
     var el = $("cats");
     if (mode === "loading") { el.innerHTML = ""; return; }
-    var list = viewItems(viewKey), total = sum(list), by = {};
+    var list = allItems(viewKey), total = sum(list), by = {};
     list.forEach(function (it) { by[it.cat] = (by[it.cat] || 0) + it.amount; });
     var lim = tab === "todos" ? state.settings.limits : {};
     var rows = CATS.filter(function (c) { return by[c.id] || lim[c.id] > 0; }).sort(function (a, b) { return (by[b.id] || 0) - (by[a.id] || 0); });
@@ -697,6 +783,114 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
         '<div class="bar"><i style="width:' + w + '%"></i></div></div>';
     }).join("");
   }
+
+  function fxEditor(r) {
+    var f = r ? r.f : null, isNew = !f;
+    var catOpts = CATS.map(function (c) { return '<option value="' + c.id + '"' + ((f ? f.cat : "vivienda") === c.id ? ' selected' : '') + '>' + esc(c.n) + '</option>'; }).join("");
+    var defWho = f ? f.who : (tab !== "todos" ? tab : (me || "p1"));
+    var whoOpts = WHO.map(function (w) { return '<option value="' + w + '"' + (defWho === w ? ' selected' : '') + '>' + esc(name(w)) + '</option>'; }).join("");
+    var mn = esc(monthName(viewKey));
+    return '<form class="fx-edit" id="fxForm" autocomplete="off">' +
+      '<div class="row2"><div class="field"><label class="label" for="fxName">Nombre</label><input type="text" id="fxName" maxlength="60" required value="' + esc(f ? f.name : "") + '" placeholder="Ej. Renta, internet, gym"></div>' +
+      '<div class="field"><label class="label" for="fxAmount">Monto' + (isNew ? '' : ' en ' + mn) + '</label><input type="number" id="fxAmount" min="0" step="0.01" inputmode="decimal" required value="' + (r ? r.amount : "") + '"></div></div>' +
+      '<div class="row3"><div class="field"><label class="label" for="fxWho">De quién</label><select id="fxWho">' + whoOpts + '</select></div>' +
+      '<div class="field"><label class="label" for="fxCat">Categoría</label><select id="fxCat">' + catOpts + '</select></div>' +
+      '<div class="field"><label class="label" for="fxKind">Tipo</label><select id="fxKind"><option value="need">Necesario</option><option value="want"' + (f && f.kind === "want" ? ' selected' : '') + '>Gusto</option></select></div></div>' +
+      (isNew
+        ? '<p class="hint">Aparecerá desde ' + mn + ' y en cada mes que siga.</p><div class="actions"><button class="btn small" type="submit" data-fx="add">Agregar gasto fijo</button><button class="btn ghost small" type="button" data-fx="cancel">Cancelar</button></div>'
+        : '<p class="hint"><b>Desde este mes</b> cambia el monto de ' + mn + ' en adelante; los meses anteriores quedan igual. <b>Solo este mes</b> no toca los demás meses.</p>' +
+          '<div class="actions"><button class="btn small" type="submit" data-fx="forward">Guardar desde este mes</button>' +
+          '<button class="btn ghost small" type="button" data-fx="only">Solo este mes</button>' +
+          (r.changed ? '<button class="btn ghost small" type="button" data-fx="reset">Volver a ' + money(r.base) + '</button>' : '') +
+          '<button class="btn ghost small" type="button" data-fx="skip">No va este mes</button>' +
+          '<button class="btn ghost small" type="button" data-fx="end">Ya no se repite</button>' +
+          '<button class="btn ghost small" type="button" data-fx="cancel">Cancelar</button></div>') +
+      '</form>';
+  }
+  function fxRowHtml(r) {
+    var c = CAT[r.cat] || CAT.otros, sub;
+    if (r.skip) sub = '<span class="s">No va en este mes</span>';
+    else if (r.changed) sub = '<span class="s chg">Solo este mes · normal ' + money(r.base) + '</span>';
+    else sub = '<span class="s">' + esc(c.n) + ' · cada mes' + (r.paid ? ' · pagado' : '') + '</span>';
+    var h = '<div class="fx-row' + (r.paid ? ' paid' : '') + (r.skip ? ' skipped' : '') + '" style="--c:' + c.c + '">' +
+      '<span class="disc">' + icon(c.id) + '</span>' +
+      '<button type="button" class="fx-main" data-fx="edit" data-fid="' + esc(r.fid) + '"><span class="t">' + esc(r.f.name) + '</span>' + sub + '</button>' +
+      '<span class="num">' + money(r.amount) + '</span>' +
+      (r.skip ? '<button type="button" class="linkish restore" data-fx="restore" data-fid="' + esc(r.fid) + '">Volver a poner</button>'
+        : '<button type="button" class="paid-btn" data-fx="paid" data-fid="' + esc(r.fid) + '" aria-pressed="' + r.paid + '" aria-label="' + (r.paid ? 'Marcar como no pagado' : 'Marcar como pagado') + ': ' + esc(r.f.name) + '">' + icon("check") + '</button>') +
+      '</div>';
+    if (editingFixed === r.fid) h += fxEditor(r);
+    return h;
+  }
+  function renderFixed() {
+    var el = $("fixedList");
+    $("fixedAdd").hidden = readOnly || editingFixed === "new";
+    if (mode === "loading") { el.innerHTML = ""; $("fixedHint").textContent = ""; return; }
+    var rows = fixedRows(viewKey, tab, true), live = rows.filter(function (r) { return !r.skip; });
+    var paidN = live.filter(function (r) { return r.paid; }).length, tot = sum(live);
+    $("fixedHint").innerHTML = live.length ? '<span class="num">' + money(tot) + '</span> · ' + paidN + ' de ' + live.length + ' pagados' : '';
+    var h = editingFixed === "new" ? fxEditor(null) : "";
+    if (!rows.length) {
+      h += editingFixed === "new" ? "" : '<div class="empty">' + icon("repeat") + '<span>' + (state.fixed.items.length ? 'No hay gastos fijos ' + (tab === "todos" ? '' : 'de ' + esc(name(tab)) + ' ') + 'en ' + esc(monthName(viewKey)) + '.' :
+        'Agrega la renta, el internet, el teléfono… y saldrán solos cada mes.') + '</span></div>';
+    } else if (tab === "todos") {
+      WHO.forEach(function (w) {
+        var g = rows.filter(function (r) { return r.who === w; }); if (!g.length) return;
+        h += '<div class="fx-group"><div class="fx-head">' + avatar(w, true) + esc(name(w)) + '<span class="num">' + money(sum(g.filter(function (r) { return !r.skip; }))) + '</span></div>' + g.map(fxRowHtml).join("") + '</div>';
+      });
+    } else h += '<div class="fx-group">' + rows.map(fxRowHtml).join("") + '</div>';
+    el.innerHTML = h;
+  }
+  function fxAction(act, fid) {
+    if (readOnly || mode === "loading") return;
+    var f = null; state.fixed.items.forEach(function (x) { if (x.id === fid) f = x; });
+    if (act === "cancel") { editingFixed = null; renderFixed(); return; }
+    if (act === "edit") { editingFixed = editingFixed === fid ? null : fid; renderFixed(); var a = $("fxAmount"); if (a) { a.focus(); a.select(); } return; }
+    if (!f && act !== "add") return;
+    var o, m = viewKey;
+    if (act === "paid") { o = monthOv(m, fid); if (o.paid) delete o.paid; else o.paid = true; tidyOv(m, fid); toast(o.paid ? "Pagado: " + f.name : "Marcado como pendiente"); }
+    else if (act === "restore") { o = monthOv(m, fid); delete o.skip; tidyOv(m, fid); }
+    else if (act === "skip") { o = monthOv(m, fid); o.skip = true; delete o.amount; delete o.paid; editingFixed = null; toast(f.name + " no va en " + monthName(m)); }
+    else if (act === "reset") { o = monthOv(m, fid); delete o.amount; tidyOv(m, fid); editingFixed = null; }
+    else if (act === "end") {
+      f.until = shiftMonth(m, -1);
+      if (f.until < f.from) state.fixed.items = state.fixed.items.filter(function (x) { return x.id !== fid; });
+      Object.keys(state.fixed.months).forEach(function (k) { if (k >= m && state.fixed.months[k][fid]) { delete state.fixed.months[k][fid]; tidyOv(k, fid); } });
+      editingFixed = null; toast(f.name + " ya no se repite desde " + monthName(m));
+    } else {
+      var amt = round2(num($("fxAmount").value)), nm = $("fxName").value.trim().slice(0, 60);
+      if (!nm) { toast("Ponle un nombre."); $("fxName").focus(); return; }
+      if (!(amt > 0)) { toast("Escribe el monto."); $("fxAmount").focus(); return; }
+      var who = $("fxWho").value, cat = $("fxCat").value, kind = $("fxKind").value === "want" ? "want" : "need";
+      if (act === "add") {
+        state.fixed.items.push({ id: uid(), name: nm, cat: cat, who: who, kind: kind, from: m, until: null, amounts: [{ from: m, amount: amt }] });
+        toast("Agregado: " + nm + " · cada mes");
+      } else if (act === "only") {
+        o = monthOv(m, fid);
+        if (amt === fixedBase(f, m)) delete o.amount; else o.amount = amt;
+        tidyOv(m, fid); toast("Cambiado solo en " + monthName(m));
+      } else if (act === "forward") {
+        f.name = nm; f.cat = cat; f.who = who; f.kind = kind;
+        if (amt !== fixedBase(f, m)) {
+          f.amounts = f.amounts.filter(function (a) { return a.from < m; }).concat([{ from: m, amount: amt }]);
+          Object.keys(state.fixed.months).forEach(function (k) { if (k >= m && state.fixed.months[k][fid]) { delete state.fixed.months[k][fid].amount; tidyOv(k, fid); } });
+        }
+        toast("Guardado desde " + monthName(m));
+      }
+      editingFixed = null;
+    }
+    persistFixed(); render();
+  }
+  $("fixedCard").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-fx]"); if (!b || b.type === "submit") return;
+    fxAction(b.getAttribute("data-fx"), b.getAttribute("data-fid") || editingFixed);
+  });
+  $("fixedCard").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var b = e.submitter && e.submitter.getAttribute("data-fx");
+    fxAction(b || (editingFixed === "new" ? "add" : "forward"), editingFixed);
+  });
+  $("fixedAdd").addEventListener("click", function () { if (readOnly) return; editingFixed = "new"; renderFixed(); var n = $("fxName"); if (n) n.focus(); });
 
   function renderList() {
     var el = $("list"), sel = $("filter"), all = viewItems(viewKey), used = {};
@@ -817,11 +1011,11 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
   });
   $("list").addEventListener("click", function (e) { var b = e.target.closest(".item"); if (b && !readOnly) startEdit(b.getAttribute("data-id")); });
   $("filter").addEventListener("change", function () { filterCat = this.value; renderList(); });
-  $("prev").addEventListener("click", function () { viewKey = shiftMonth(viewKey, -1); render(); });
-  $("next").addEventListener("click", function () { viewKey = shiftMonth(viewKey, 1); render(); });
+  $("prev").addEventListener("click", function () { editingFixed = null; viewKey = shiftMonth(viewKey, -1); render(); });
+  $("next").addEventListener("click", function () { editingFixed = null; viewKey = shiftMonth(viewKey, 1); render(); });
   $("tabs").addEventListener("click", function (e) {
     var b = e.target.closest(".tab"); if (!b) return;
-    tab = b.getAttribute("data-tab"); lsSet(TAB_KEY, tab); filterCat = "";
+    tab = b.getAttribute("data-tab"); lsSet(TAB_KEY, tab); filterCat = ""; editingFixed = null;
     if (!editingId) setWho(tab !== "todos" ? tab : (me || "p1"));
     render();
   });
@@ -861,10 +1055,18 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
       monthItems(k).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }).forEach(function (it) {
         rows.push([it.date, name(it.who || "p1"), name(it.by || "p1"), (CAT[it.cat] || CAT.otros).n, it.kind === "want" ? "Gusto" : "Necesario", it.note || "", it.method || "", it.amount.toFixed(2)]);
       });
+      fixedRows(k, "todos").forEach(function (r) {
+        rows.push([k + "-01", name(r.who), "", (CAT[r.cat] || CAT.otros).n, "Fijo" + (r.paid ? " (pagado)" : ""), r.f.name, "", r.amount.toFixed(2)]);
+      });
     });
     return "﻿" + rows.map(function (r) { return r.map(function (v) { v = String(v); return /[",\n;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(","); }).join("\r\n");
   }
-  function allMonths() { var m = {}; Object.keys(state.docs).forEach(function (d) { m[d.slice(0, 7)] = 1; }); return Object.keys(m); }
+  function allMonths() {
+    var m = {}; Object.keys(state.docs).forEach(function (d) { m[d.slice(0, 7)] = 1; });
+    var first = null; state.fixed.items.forEach(function (f) { if (!first || f.from < first) first = f.from; });
+    for (var k = first; k && k <= viewKey; k = shiftMonth(k, 1)) m[k] = 1;
+    return Object.keys(m);
+  }
   function saveFile(fname, text, type) {
     if (downloads) {
       downloads.save({ filename: fname, data: text }).then(function () { toast("Archivo listo"); }, function (e) { if (!e || e.code !== "declined") toast("No se pudo descargar el archivo."); });
@@ -879,7 +1081,7 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
   $("csvMonth").addEventListener("click", function () { saveFile("gastos-" + viewKey + ".csv", csv([viewKey]), "text/csv"); });
   $("csvAll").addEventListener("click", function () { saveFile("gastos-todo.csv", csv(allMonths()), "text/csv"); });
   $("jsonOut").addEventListener("click", function () {
-    saveFile("respaldo-cuentas-" + todayStr() + ".json", JSON.stringify({ app: "nuestras-cuentas", version: 2, settings: state.settings, docs: state.docs }, null, 2), "application/json");
+    saveFile("respaldo-cuentas-" + todayStr() + ".json", JSON.stringify({ app: "nuestras-cuentas", version: 3, settings: state.settings, docs: state.docs, fixed: state.fixed }, null, 2), "application/json");
   });
   $("jsonIn").addEventListener("change", function () {
     var file = this.files && this.files[0]; this.value = "";
@@ -895,7 +1097,8 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
           if (d.settings && !incomeTotal() && !state.settings.budget) { state.settings = normSettings(d.settings); persistConfig(); buildNamed(); }
         } else if (d && d.months && typeof d.months === "object") changed = migrateV1(d), persistConfig();
         else throw 0;
-        changed.forEach(persistDoc);
+        if (d.fixed && !state.fixed.items.length) { state.fixed = normFixed(d.fixed); persistFixed(); if (state.fixed.items.length) changed = changed.concat(["fijos"]); }
+        changed.forEach(function (k) { if (k !== "fijos") persistDoc(k); });
         toast(changed.length ? "Respaldo cargado" : "El respaldo no tenía gastos nuevos");
         setStatus(); render();
       } catch (e) { toast("Ese archivo no es un respaldo de esta app."); }

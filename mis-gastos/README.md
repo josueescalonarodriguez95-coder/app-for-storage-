@@ -10,6 +10,14 @@ App para llevar los gastos de la casa entre dos personas (Josué y Roxana). Es u
 Cada gasto se marca como de Josué, de Roxana o de **la casa** (renta, súper, luz…), y como **necesario** o **gusto**.
 La primera vez, cada aparato pregunta quién lo usa, para que lo que anote quede a su nombre.
 
+## Gastos fijos
+
+Renta, carro, internet, teléfono, seguros… se ponen una vez y **aparecen solos cada mes**, separados de los demás gastos.
+
+- Toca un fijo para cambiarlo: **Solo este mes** (el precio subió una vez) o **Desde este mes** (el precio cambió para siempre; los meses anteriores quedan igual).
+- **No va este mes** lo quita solo de ese mes; **Ya no se repite** lo termina.
+- El círculo de la derecha marca que ya está pagado.
+
 ## Ajustes
 
 En **Ingresos, ahorro y límites**: nombre e ingreso de cada quien, límite personal, meta de ahorro juntos, moneda y límites por categoría.
