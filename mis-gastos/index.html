@@ -684,6 +684,11 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     fixedRef = db.doc("hogar/fijos");
     incomeCol = db.collection("ingresos");
     var gotC = false, gotM = false, gotF = false, gotI = false, cfgExists = false;
+    function definitive(snap) { return !(snap.metadata && snap.metadata.fromCache) || cacheGrace; }
+    var cacheGrace = false;
+    var seen = {};
+    // Si en 8 s solo llegó la copia guardada, se usa esa (sin conexión) en vez de quedarse cargando.
+    setTimeout(function () { cacheGrace = true; if (seen.c) gotC = true; if (seen.m) gotM = true; if (seen.f) gotF = true; if (seen.i) gotI = true; ready(); }, 8000);
     function ready() {
       render();
       if (gotC && gotM && gotF && gotI && mode !== "db") { mode = "db"; setStatus(); render(); migrateDb(cfgExists); }
@@ -695,7 +700,7 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
         state.migrated = d && d.migrated ? clone(d.migrated) : {};
         fillSettings();
       }
-      gotC = true; ready();
+      seen.c = true; if (definitive(snap)) gotC = true; ready();
     }, dbFailed);
     monthsCol.onSnapshot(function (snap) {
       snap.docs.forEach(function (doc) {
@@ -703,15 +708,15 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
         var d = doc.data();
         state.docs[doc.id] = d && Array.isArray(d.items) ? clone(d.items) : [];
       });
-      gotM = true; ready();
+      seen.m = true; if (definitive(snap)) gotM = true; ready();
     }, dbFailed);
     fixedRef.onSnapshot(function (snap) {
       if (!running.fx) state.fixed = normFixed(snap.exists ? snap.data() : null);
-      gotF = true; ready();
+      seen.f = true; if (definitive(snap)) gotF = true; ready();
     }, dbFailed);
     incomeCol.onSnapshot(function (snap) {
       snap.docs.forEach(function (doc) { if (!running["in:" + doc.id]) state.income[doc.id] = normIncome(doc.data()); });
-      gotI = true; ready();
+      seen.i = true; if (definitive(snap)) gotI = true; ready();
     }, dbFailed);
   }
   // Trae lo que se anotó en la primera versión (guardada en privado para quien la usaba) al espacio compartido.
@@ -1135,10 +1140,12 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     }).join("");
     fillSettings();
   }
+  function defaultDate() { return viewKey === monthKey(new Date()) ? todayStr() : viewKey + "-01"; }
+  function syncFormDate() { if (!editingId && !$("amount").value) $("date").value = defaultDate(); }
   function setWho(w) { var el = $("who-" + w); if (el) el.checked = true; }
   function resetForm() {
     editingId = null; confirmDelete = false;
-    $("form").reset(); $("date").value = todayStr(); $("cat-super").checked = true; $("kindNeed").checked = true;
+    $("form").reset(); $("date").value = defaultDate(); $("cat-super").checked = true; $("kindNeed").checked = true;
     setWho(tab !== "todos" ? tab : (me || "p1"));
     formActions(); $("formTitle").textContent = "Anotar un gasto";
   }
@@ -1182,8 +1189,10 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
     (state.docs[d] = state.docs[d] || []).push(rec);
     if (f && f.doc !== d) persistDoc(f.doc);
     persistDoc(d);
-    viewKey = date.slice(0, 7); freshId = rec.id;
-    if (tab !== "todos" && rec.who !== tab) { tab = rec.who === "casa" ? "todos" : rec.who; lsSet(TAB_KEY, tab); }
+    // Se queda en el mes y apartado que estás viendo; solo avisa si el gasto quedó en otro mes o apartado.
+    freshId = rec.id;
+    if (date.slice(0, 7) !== viewKey) toast("Anotado en " + monthName(date.slice(0, 7)) + " (estás viendo " + monthName(viewKey) + ")");
+    else if (tab !== "todos" && rec.who !== tab) toast("Anotado en el apartado de " + name(rec.who));
     resetForm(); render();
   });
   $("formActions").addEventListener("click", function (e) {
@@ -1198,8 +1207,8 @@ details.card > .inner { padding: 0 20px 20px; display: grid; gap: 16px; }
   });
   $("list").addEventListener("click", function (e) { var b = e.target.closest(".item"); if (b && !readOnly) startEdit(b.getAttribute("data-id")); });
   $("filter").addEventListener("change", function () { filterCat = this.value; renderList(); });
-  $("prev").addEventListener("click", function () { editingFixed = null; viewKey = shiftMonth(viewKey, -1); render(); });
-  $("next").addEventListener("click", function () { editingFixed = null; viewKey = shiftMonth(viewKey, 1); render(); });
+  $("prev").addEventListener("click", function () { editingFixed = null; viewKey = shiftMonth(viewKey, -1); syncFormDate(); render(); });
+  $("next").addEventListener("click", function () { editingFixed = null; viewKey = shiftMonth(viewKey, 1); syncFormDate(); render(); });
   $("tabs").addEventListener("click", function (e) {
     var b = e.target.closest(".tab"); if (!b) return;
     tab = b.getAttribute("data-tab"); lsSet(TAB_KEY, tab); filterCat = ""; editingFixed = null;
