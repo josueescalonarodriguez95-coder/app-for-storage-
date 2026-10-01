@@ -12,6 +12,8 @@ import {
   INVULNERABLE_AFTER_HIT,
   ISLAND,
   MAGNET_RADIUS,
+  MAX_SPEED,
+  MIN_SPEED,
   PLAYER_HALF_DEPTH,
   PLAYER_HALF_WIDTH,
   REVIVE_COST,
@@ -28,7 +30,8 @@ import { LevelGenerator } from './level/generator.ts'
 import type { CameraMode } from './level/types.ts'
 import { poseRig } from './models/characters.ts'
 import { buildCoconut } from './models/props.ts'
-import { animateSea, buildCloud, buildSea, buildSky, buildVolcano } from './models/scenery.ts'
+import { SUN_DIR, WATER_Y, animateSea, buildEnvSky, buildGull, buildIsland, buildSea, buildSky, buildVolcano } from './models/scenery.ts'
+import type { Sky } from 'three/examples/jsm/objects/Sky.js'
 import { Player } from './player.ts'
 import type { DeathKind, LandInfo } from './player.ts'
 import { Rng, hashString, todayKey } from './rng.ts'
@@ -66,9 +69,10 @@ export class Game {
   private ui = new UI()
   private save: SaveData
   private sea: THREE.Mesh
-  private sky: THREE.Mesh
+  private sky: Sky
   private volcano: THREE.Group
-  private clouds: THREE.Group[] = []
+  private islands: { obj: THREE.Group; offset: THREE.Vector3 }[] = []
+  private gulls: { obj: THREE.Group; phase: number; r: number; h: number }[] = []
   private coconut: THREE.Group
   private sun: THREE.DirectionalLight
 
@@ -103,32 +107,64 @@ export class Game {
   private hintsThisRun = new Set<string>()
   private hintCooldown = 0
   private startedRun = false
+  private lastMilestone = 0
+  private perf = { frames: 0, time: 0, checked: false }
   /** Sólo con ?debug en la URL: invencible y saltos de distancia para probar. */
   god = false
 
   constructor(canvas: HTMLCanvasElement) {
     this.save = loadSave()
     this.audio.muted = this.save.muted
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: window.devicePixelRatio < 2, powerPreference: 'high-performance' })
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' })
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping
+    this.renderer.toneMappingExposure = 1.0
+    this.renderer.shadowMap.type = THREE.PCFShadowMap
 
-    this.scene.fog = new THREE.Fog(0xbfe9f5, 60, 190)
-    this.scene.add(new THREE.HemisphereLight(0xdff6ff, 0xf3d49b, 1.6))
-    this.sun = new THREE.DirectionalLight(0xfff1d6, 2.2)
-    this.sun.position.set(-6, 12, -4)
-    this.scene.add(this.sun, this.sun.target)
-
+    // Cielo físico y luz de sol con sombras suaves
     this.sky = buildSky()
+    this.scene.add(this.sky)
+    this.scene.fog = new THREE.Fog(0xcfe6ef, 70, 300)
+    this.scene.add(new THREE.HemisphereLight(0xcfeaff, 0xd9b98a, 0.5))
+    this.sun = new THREE.DirectionalLight(0xfff0d8, 2.6)
+    this.sun.shadow.radius = 3
+    this.sun.shadow.camera.left = -14
+    this.sun.shadow.camera.right = 14
+    this.sun.shadow.camera.top = 22
+    this.sun.shadow.camera.bottom = -10
+    this.sun.shadow.camera.near = 1
+    this.sun.shadow.camera.far = 70
+    this.sun.shadow.bias = -0.0006
+    this.sun.shadow.normalBias = 0.03
+    this.scene.add(this.sun, this.sun.target)
+    // Reflejo del cielo para todos los materiales (metal, ojos, caparazones)
+    const pmrem = new THREE.PMREMGenerator(this.renderer)
+    const envScene = new THREE.Scene()
+    envScene.add(buildEnvSky())
+    this.scene.environment = pmrem.fromScene(envScene, 0, 1, 1000).texture
+    this.scene.environmentIntensity = 0.6
+    pmrem.dispose()
+
     this.sea = buildSea()
     this.volcano = buildVolcano()
-    this.scene.add(this.sky, this.sea, this.volcano)
-    for (let i = 0; i < 7; i++) {
-      const c = buildCloud()
-      c.userData.offset = new THREE.Vector3((Math.random() - 0.5) * 360, 55 + Math.random() * 40, 60 + Math.random() * 260)
-      this.clouds.push(c)
-      this.scene.add(c)
+    this.scene.add(this.sea, this.volcano)
+    for (const [x, z, sc] of [
+      [-150, 260, 1],
+      [170, 300, 1.3],
+      [-260, 380, 1.6],
+      [120, 520, 2],
+    ]) {
+      const obj = buildIsland()
+      obj.scale.setScalar(sc)
+      this.islands.push({ obj, offset: new THREE.Vector3(x, WATER_Y, z) })
+      this.scene.add(obj)
     }
+    for (let i = 0; i < 4; i++) {
+      const obj = buildGull()
+      this.gulls.push({ obj, phase: Math.random() * 6, r: 8 + Math.random() * 10, h: 10 + Math.random() * 6 })
+      this.scene.add(obj)
+    }
+    this.applyQuality()
 
     this.cam = new CameraRig(window.innerWidth / window.innerHeight)
     this.world = new World(this.scene)
@@ -156,6 +192,27 @@ export class Game {
     this.ui.renderTitle(this.save)
     this.ui.doneLoading()
     requestAnimationFrame((t) => this.frame(t))
+  }
+
+  /** Calidad gráfica: alta (PC), media (celular), baja (celulares viejos). */
+  private applyQuality(): void {
+    const q = this.save.quality
+    const dpr = window.devicePixelRatio || 1
+    this.renderer.setPixelRatio(q === 'alta' ? Math.min(dpr, 2) : q === 'media' ? Math.min(dpr, 1.5) : 1)
+    const shadows = q !== 'baja'
+    this.renderer.shadowMap.enabled = shadows
+    this.sun.castShadow = shadows
+    const size = q === 'alta' ? 2048 : 1024
+    if (this.sun.shadow.mapSize.x !== size) {
+      this.sun.shadow.mapSize.set(size, size)
+      this.sun.shadow.map?.dispose()
+      this.sun.shadow.map = null
+    }
+    this.scene.traverse((o) => {
+      const mat = (o as THREE.Mesh).material
+      if (mat) for (const mm of Array.isArray(mat) ? mat : [mat]) mm.needsUpdate = true
+    })
+    if (this.cam) this.resize()
   }
 
   // ---------- Menús ----------
@@ -195,6 +252,14 @@ export class Game {
       this.audio.setMuted(this.save.muted)
       persist(this.save)
       this.ui.renderTitle(this.save)
+    })
+    this.ui.on('btn-quality', () => {
+      const order = ['alta', 'media', 'baja'] as const
+      this.save.quality = order[(order.indexOf(this.save.quality) + 1) % 3]
+      persist(this.save)
+      this.applyQuality()
+      this.ui.renderTitle(this.save)
+      this.click()
     })
     this.ui.on('btn-story-next', () => {
       this.click()
@@ -268,6 +333,8 @@ export class Game {
     this.player.reset()
     this.coconut.visible = false
     this.coconutState = 'off'
+    document.getElementById('app')!.classList.remove('chase')
+    this.audio.tempo = 1
     this.world.reset(new LevelGenerator(new Rng(7)), new Rng(7))
     this.world.update(0, 0)
     this.world.clearItems()
@@ -332,6 +399,8 @@ export class Game {
     this.hintsThisRun.clear()
     this.hintCooldown = 1.5
     this.startedRun = false
+    this.lastMilestone = 0
+    this.audio.tempo = 1
     this.cam.switchTo('run', true)
     this.ui.hideAllModals()
     this.ui.hide('title')
@@ -375,9 +444,8 @@ export class Game {
     switch (a) {
       case 'left':
       case 'right': {
-        // En carrera normal la derecha de la pantalla es -x; de frente (persecución) es +x.
-        const screenRight = a === 'right' ? 1 : -1
-        p.moveLane(mode === 'chase' ? screenRight : -screenRight, mode)
+        // Con la cámara detrás de Kiko, la derecha de la pantalla es -x.
+        p.moveLane(a === 'right' ? -1 : 1, mode)
         break
       }
       case 'up': {
@@ -424,7 +492,7 @@ export class Game {
     if (far && far.mode !== this.cam.mode && this.warnedAt !== far.start) {
       this.warnedAt = far.start
       this.audio.play('warning')
-      this.ui.banner(MODE_NAMES[far.mode], far.mode === 'chase' ? '¡Algo gigante viene!' : '', 1400)
+      this.ui.banner(MODE_NAMES[far.mode], far.mode === 'chase' ? '¡Algo gigante viene detrás!' : '', 1400)
     }
 
     this.prevFeet = p.y
@@ -448,6 +516,13 @@ export class Game {
     }
 
     this.score += speed * dt * (this.timers.double > 0 ? 2 : 1)
+    // El ritmo sube: la música se acelera con la velocidad y se avisa cada 500 m
+    this.audio.tempo = 1 + ((speed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)) * 0.35
+    const milestone = Math.floor(p.z / 500)
+    if (milestone > this.lastMilestone) {
+      this.lastMilestone = milestone
+      this.ui.toast(`¡Más rápido! · ${(milestone * 500).toLocaleString('en-US')} m`)
+    }
     this.stats.distance = Math.floor(p.z)
 
     // Historia: superar el récord de la isla abre al jefe para la próxima partida.
@@ -1028,7 +1103,7 @@ export class Game {
     gap: ['¡Un hueco! Salta, o desliza arriba otra vez para el doble salto.', '¡Un hueco! Salta; en el aire, salta otra vez para el doble salto.'],
     wave: ['La arena mojada resbala: cuesta más cambiar de carril.', 'La arena mojada resbala: cuesta más cambiar de carril.'],
     chispa: ['¡Soy yo! Cada caja de Chispa me hace más fuerte. Aguanto golpes por ti.', '¡Soy yo! Cada caja de Chispa me hace más fuerte. Aguanto golpes por ti.'],
-    chase: ['¡Corre hacia la pantalla! Los obstáculos llegan por detrás: mira los avisos abajo.', '¡Corre hacia la pantalla! Los obstáculos llegan por detrás: mira los avisos abajo.'],
+    chase: ['¡Un coco gigante viene rodando detrás! No te detengas y esquiva todo.', '¡Un coco gigante viene rodando detrás! No te detengas y esquiva todo.'],
     side: ['Vista lateral: aquí sólo se salta, se desliza y se gira.', 'Vista lateral: aquí sólo se salta, se desliza y se gira.'],
     barrelKick: ['¡Así se hace! Los barriles pateados explotan contra lo que encuentren.', '¡Así se hace! Los barriles pateados explotan contra lo que encuentren.'],
   }
@@ -1151,6 +1226,7 @@ export class Game {
     this.last = now
     this.time += dt
 
+    if (this.state === 'playing') this.watchPerformance(dt)
     if (this.state === 'playing') {
       // Pasos de física de máximo 1/60 s para que nada atraviese nada a 22 m/s
       let left = dt
@@ -1188,59 +1264,92 @@ export class Game {
     }
 
     // Ambiente que sigue al jugador
-    this.sky.position.set(p.x, 0, p.z)
-    this.sea.position.set(0, -0.9, p.z)
+    const camPos = this.cam.camera.position
+    this.sky.position.copy(camPos)
+    this.sea.position.set(Math.round(p.x / 10) * 10, WATER_Y, Math.round(p.z / 10) * 10)
     animateSea(this.sea, this.time)
-    this.volcano.position.set(40, -2, p.z + 330)
+    this.volcano.position.set(60, WATER_Y, p.z + 420)
     this.volcano.children.forEach((c) => {
-      if (c.name === 'smoke') c.position.y += Math.sin(this.time + c.position.x) * 0.02
+      if (c.name === 'smoke') {
+        const k = ((this.time * 0.05 + c.position.x * 0.01) % 1)
+        ;(c as THREE.Sprite).material.rotation = Math.sin(this.time * 0.2 + c.position.y) * 0.2
+        c.position.x += Math.sin(this.time * 0.3 + k) * 0.01
+      }
     })
-    for (const c of this.clouds) {
-      const o = c.userData.offset as THREE.Vector3
-      c.position.set(o.x + this.time * 1.5, o.y, p.z + o.z)
+    for (const i of this.islands) i.obj.position.set(i.offset.x, i.offset.y, p.z + i.offset.z)
+    ;(this.sky.material as THREE.ShaderMaterial).uniforms.time.value = this.time
+    for (const g of this.gulls) {
+      const a = this.time * 0.4 + g.phase
+      g.obj.position.set(Math.cos(a) * g.r + 6, g.h + Math.sin(a * 2) * 0.8, p.z + 30 + Math.sin(a) * g.r)
+      g.obj.rotation.y = -a
+      const flap = Math.sin(this.time * 9 + g.phase) * 0.5
+      g.obj.getObjectByName('wl')!.rotation.z = flap
+      g.obj.getObjectByName('wr')!.rotation.z = -flap
     }
-    this.sun.position.set(p.x - 6, 12, p.z - 4)
-    this.sun.target.position.set(p.x, 0, p.z + 4)
+    // Sol: la sombra sigue a Kiko
+    this.sun.target.position.set(p.x, 0, p.z + 6)
+    this.sun.position.copy(this.sun.target.position).addScaledVector(SUN_DIR, 40)
     this.renderer.render(this.scene, this.cam.camera)
   }
 
+  /** Si el celular no aguanta (menos de ~40 cuadros por segundo), baja la calidad una vez. */
+  private watchPerformance(dt: number): void {
+    if (this.perf.checked) return
+    this.perf.frames++
+    this.perf.time += dt
+    if (this.perf.time < 4) return
+    this.perf.checked = true
+    const fps = this.perf.frames / this.perf.time
+    if (fps < 40 && this.save.quality !== 'baja') {
+      this.save.quality = this.save.quality === 'alta' ? 'media' : 'baja'
+      persist(this.save)
+      this.applyQuality()
+      this.ui.toast(`Gráficos: ${this.save.quality} (para ir más fluido)`)
+    }
+  }
+
   private updateCoconut(dt: number): void {
+    const app = document.getElementById('app')!
+    app.classList.toggle('chase', this.coconutState === 'in' || this.coconutState === 'on')
     if (this.coconutState === 'off') return
     const p = this.player
     this.coconutT += dt
     const c = this.coconut
     const ball = c.getObjectByName('ball')!
     const shadow = c.children.find((o) => o !== ball)!
-    let x = p.x * 0.3
-    let y = 3
-    let z = p.z - 9 + Math.sin(this.time * 1.3) * 0.8
+    // Rueda detrás de Kiko, rebotando; la cámara (detrás) lo ve en la parte de abajo de la pantalla
+    const bounce = Math.abs(Math.sin(this.time * 5)) * 0.2
+    let x = p.x * 0.7
+    let y = 1.5 + bounce
+    let z = p.z - 6.5 + Math.sin(this.time * 1.3) * 0.3
     if (this.coconutState === 'in') {
-      // Cae del cielo detrás de Kiko
-      const k = Math.min(1, this.coconutT / 1.2)
-      y = 3 + (1 - k) * 25
-      z = p.z - 9 - (1 - k) * 10
+      // Llega rodando desde atrás
+      const k = Math.min(1, this.coconutT / 1.4)
+      z = p.z - 6.5 - (1 - k) * (1 - k) * 30
       if (k >= 1) {
         this.coconutState = 'on'
-        this.cam.addShake(0.6)
+        this.cam.addShake(0.5)
         this.audio.play('anchor')
       }
     } else if (this.coconutState === 'out') {
-      // Se desvía y se va al mar
+      // Se desvía hacia el mar y se queda atrás
       const k = this.coconutT / 2
-      x = p.x * 0.3 + k * k * 25
-      y = 3 - k * k * 4
-      z = p.z - 9 - k * 12
+      x = p.x * 0.7 + k * k * 22
+      y = 1.5 + bounce - k * k * 3
+      z = p.z - 6.5 - k * 18
       if (k >= 1) {
         this.coconutState = 'off'
         c.visible = false
-        this.fx.splash(new THREE.Vector3(x, -0.5, z), 20)
+        this.fx.splash(new THREE.Vector3(x, WATER_Y + 0.3, z), 20)
+        return
       }
     }
     if (p.dead) z = c.position.z // se detiene junto a Kiko caído
     c.position.set(x, 0, z)
     ball.position.y = y
-    ball.rotation.x += (this.speed * dt) / 3
-    shadow.visible = y < 8
+    ball.rotation.x += (this.speed * dt) / 2
+    shadow.visible = y < 6
+    if (Math.random() < dt * 12) this.fx.dust(new THREE.Vector3(x + (Math.random() - 0.5) * 2, 0.1, z + 1.5), 2)
   }
 
   private updateHud(): void {
@@ -1256,22 +1365,7 @@ export class Game {
       mult: this.timers.double > 0,
       spinReady: this.dailyRule === 'sin-giro' ? 0 : p.spinCd > 0 ? 1 - p.spinCd / 1.5 : 1,
       powerups: pus,
+      speed: this.speed,
     })
-    // En la persecución, avisos abajo de lo que viene por detrás de la cámara
-    const slots = { left: '', center: '', right: '' }
-    if (this.cam.mode === 'chase' && !p.dead) {
-      for (const e of this.world.nearby(p.z + 13, 9)) {
-        if (e.z < p.z + 5 || !HAZARDS.has(e.type) || e.state !== 'idle') continue
-        const icon = e.type === 'palm' ? '↓' : e.type === 'turtle' ? '✖' : e.type === 'magmo' ? '⟳' : '↑'
-        // En persecución, +x se ve a la derecha de la pantalla
-        const slot = e.lane > 0 ? 'right' : e.lane < 0 ? 'left' : 'center'
-        if (!slots[slot]) slots[slot] = icon
-      }
-      for (const l of [-1, 0, 1]) {
-        const slot = l > 0 ? 'right' : l < 0 ? 'left' : 'center'
-        if (!slots[slot] && this.world.inGap(l, p.z + 9)) slots[slot] = '↑'
-      }
-    }
-    this.ui.chaseHints(slots)
   }
 }

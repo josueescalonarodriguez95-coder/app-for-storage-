@@ -20,6 +20,7 @@ export interface HudState {
   mult: boolean
   spinReady: number // 0..1
   powerups: { kind: PowerUpKind; left: number; total: number }[]
+  speed: number
 }
 
 export interface OverData {
@@ -93,6 +94,11 @@ export class UI {
     this.set('h-gems', fmt(s.gems))
     this.set('h-dist', fmt(s.distance))
     this.set('h-score', fmt(s.score))
+    this.set('h-speed', `${Math.round(s.speed * 3.6)} km/h`)
+    const k = (s.speed - 11) / 13
+    const bar = $('h-speedbar')
+    const w = `${Math.round(Math.min(1, Math.max(0.04, k)) * 100)}%`
+    if (bar.style.width !== w) bar.style.width = w
     this.set('h-lives', s.lives > 4 ? '<i></i><span class="more">×' + s.lives + '</span>' : '<i></i>'.repeat(Math.max(0, s.lives)), true)
     this.set('h-chispa', [1, 2, 3].map((n) => `<i class="${n <= s.chispa ? 'on' : ''}"></i>`).join(''), true)
     $('h-mult').hidden = !s.mult
@@ -145,16 +151,6 @@ export class UI {
     $('toast').hidden = true
   }
 
-  chaseHints(slots: Record<'left' | 'center' | 'right', string>): void {
-    for (const k of ['left', 'center', 'right'] as const) {
-      const el = document.querySelector<HTMLElement>(`#chase-hints [data-slot="${k}"]`)!
-      const v = slots[k]
-      if (el.textContent !== v) el.textContent = v
-      el.classList.toggle('show', !!v)
-      el.style.opacity = v ? '1' : '0'
-    }
-  }
-
   bossBar(visible: boolean, left = 0, total = 3): void {
     $('boss-bar').hidden = !visible
     if (visible) this.set('boss-hearts', Array.from({ length: total }, (_, i) => `<i class="${i < left ? '' : 'off'}"></i>`).join(''), true)
@@ -180,6 +176,7 @@ export class UI {
       b.innerHTML = save.bossDefeated ? label : `${label}<span class="lock">Vence al primer jefe</span>`
     }
     $('btn-sound').classList.toggle('off', save.muted)
+    $('btn-quality').textContent = `Gráficos: ${save.quality[0].toUpperCase()}${save.quality.slice(1)}`
   }
 
   story(step: number): void {

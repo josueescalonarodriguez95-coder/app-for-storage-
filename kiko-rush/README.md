@@ -30,10 +30,22 @@ Para probar: `?debug` en la URL deja a Kiko invencible y expone `window.kiko`
 | Giro | Tocar | Shift / J | X / Cuadrado |
 | Pausa | Botón ❚❚ | Esc / P | Start |
 
+## Gráficos
+
+Iluminación física (PBR) con sombras reales del sol, cielo con nubes, mar con olas, reflejos, cáusticas
+y espuma en la orilla, playa con dunas, y texturas con relieve generadas al arrancar (arena, corteza,
+tablones, metal, pelaje): no se descarga ninguna imagen. Botón **Gráficos: Alta / Media / Baja** en el menú;
+si el celular va lento (menos de ~40 cuadros por segundo), el juego baja la calidad solo.
+
+## Velocidad
+
+Sube poco a poco desde 11 m/s (40 km/h) hasta 24 m/s (86 km/h) a los 10 km, sin saltos bruscos.
+La música se acelera con la carrera, hay un velocímetro bajo la distancia y un aviso cada 500 m.
+
 ## Qué hay del MVP
 
 - [x] Kiko con correr, cambiar de carril, saltar, doble salto, deslizarse, giro (0.5 s + 1 s de enfriamiento) y golpe en picada
-- [x] Los tres modos de cámara (carrera normal, persecución de frente con el coco gigante, vista lateral 2.5D) con aviso sonoro y transición de 1 s
+- [x] Carrera normal, persecución (con la misma cámara hacia el frente y el coco gigante rodando detrás) y vista lateral 2.5D, con aviso sonoro y transición de 1 s
 - [x] 30 bloques de pista de Playa Guayaba + 3 de descanso, unidos al azar, sin repetir, con dificultad 1–5 y prueba automática de ruta segura
 - [x] Cajas de madera, flecha, hierro, pregunta, Chispa y barril de pólvora (se puede lanzar rodando con el giro)
 - [x] Guayabas (vida extra cada 100), gemas, Chispa con sus 3 niveles (escudo, imán, 8 s invencible)

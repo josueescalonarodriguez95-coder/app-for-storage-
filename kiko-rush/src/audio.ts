@@ -93,6 +93,8 @@ export class Audio {
   private fruitChain = 0
   private lastFruit = 0
   muted = false
+  /** Multiplica el tempo: la música se acelera junto con la carrera. */
+  tempo = 1
 
   /** Tiene que llamarse desde un toque o clic: los navegadores no dejan sonar antes. */
   unlock(): void {
@@ -139,7 +141,7 @@ export class Audio {
     const ctx = this.ctx
     if (!ctx || !this.theme) return
     const t = THEMES[this.theme]
-    const stepDur = 60 / t.bpm / 4
+    const stepDur = 60 / (t.bpm * this.tempo) / 4
     while (this.nextTime < ctx.currentTime + 0.12) {
       const s = this.step % 16
       const bar = Math.floor(this.step / 16) % t.chords.length

@@ -3,7 +3,7 @@ import { CHUNK_LENGTH, LANE_WIDTH } from './config.ts'
 import type { LevelGenerator } from './level/generator.ts'
 import type { CameraMode, Chunk, ItemType, Platform } from './level/types.ts'
 import { CRATE_SIZE, buildAnchor, buildItem } from './models/props.ts'
-import { buildDecor, buildGroundPiece, buildPlatformPiece, sizeGroundPiece, sizePlatform } from './models/scenery.ts'
+import { beachHeight, buildBeachPiece, buildDecor, buildGroundPiece, buildPlatformPiece, shapeBeach, sizeGroundPiece, sizePlatform } from './models/scenery.ts'
 import type { DecorKind } from './models/scenery.ts'
 import type { Rng } from './rng.ts'
 
@@ -47,6 +47,7 @@ export interface ActiveChunk {
   chunk: Chunk
   entities: Entity[]
   ground: THREE.Mesh[]
+  beach: THREE.Mesh[]
   platforms: PlatformRT[]
   decor: { kind: DecorKind; obj: THREE.Group }[]
   gaps: { z0: number; z1: number; lanes: number[] }[]
@@ -94,7 +95,20 @@ class Pool {
   }
 }
 
-const DECOR_KINDS: DecorKind[] = ['palm', 'palm', 'palm', 'rock', 'bush', 'bush', 'torch', 'hut', 'post']
+/** Qué decoración va y a qué distancia de la pista (x mínimo y máximo). */
+const DECOR: { kind: DecorKind; weight: number; x: [number, number] }[] = [
+  { kind: 'palm', weight: 5, x: [6.5, 11.5] },
+  { kind: 'bush', weight: 3, x: [5, 9] },
+  { kind: 'grass', weight: 4, x: [4.4, 8] },
+  { kind: 'rock', weight: 2, x: [5.5, 14] },
+  { kind: 'starfish', weight: 2, x: [4.5, 10] },
+  { kind: 'torch', weight: 2, x: [4.6, 5.2] },
+  { kind: 'post', weight: 1, x: [4.6, 5.2] },
+  { kind: 'umbrella', weight: 1, x: [7.5, 10.5] },
+  { kind: 'hut', weight: 1, x: [9.5, 12] },
+  { kind: 'sign', weight: 0.3, x: [4.8, 5.4] },
+]
+const DECOR_TOTAL = DECOR.reduce((a, d) => a + d.weight, 0)
 
 export class World {
   readonly group = new THREE.Group()
@@ -102,9 +116,8 @@ export class World {
   private itemPool = new Pool((key) => (key === 'anchor' ? buildAnchor() : buildItem(key as ItemType)))
   private decorPool = new Pool((key) => buildDecor(key as DecorKind))
   private groundPool: THREE.Mesh[] = []
+  private beachPool: THREE.Mesh[] = []
   private platformPool: THREE.Group[] = []
-  private beachL: THREE.Mesh
-  private beachR: THREE.Mesh
   private nextStart = 0
   generator!: LevelGenerator
   rng!: Rng
@@ -115,13 +128,6 @@ export class World {
 
   constructor(scene: THREE.Scene) {
     scene.add(this.group)
-    const beachMat = new THREE.MeshToonMaterial({ color: 0xf0cf92 })
-    const beachGeo = new THREE.BoxGeometry(14, 1, 400)
-    this.beachL = new THREE.Mesh(beachGeo, beachMat)
-    this.beachR = new THREE.Mesh(beachGeo, beachMat)
-    this.beachL.position.set(-11.4, -0.85, 0)
-    this.beachR.position.set(11.4, -0.85, 0)
-    this.group.add(this.beachL, this.beachR)
   }
 
   reset(generator: LevelGenerator, rng: Rng): void {
@@ -137,7 +143,7 @@ export class World {
 
   private spawn(chunk: Chunk, mode: CameraMode, extra: Chunk['items']): void {
     const start = this.nextStart
-    const ac: ActiveChunk = { start, end: start + CHUNK_LENGTH, mode, chunk, entities: [], ground: [], platforms: [], decor: [], gaps: [] }
+    const ac: ActiveChunk = { start, end: start + CHUNK_LENGTH, mode, chunk, entities: [], ground: [], beach: [], platforms: [], decor: [], gaps: [] }
     const side = mode === 'side'
 
     // Huecos: en vista lateral cubren todo el ancho para que se vean desde el costado.
@@ -158,8 +164,6 @@ export class World {
       for (const [z0, z1] of pieces) {
         const mesh = this.groundPool.pop() ?? buildGroundPiece()
         sizeGroundPiece(mesh, x, width + 0.01, z0, z1 + 0.01)
-        const tex = ((mesh.material as THREE.Material[])[2] as THREE.MeshToonMaterial).map
-        if (tex) tex.repeat.set(1, 1)
         this.group.add(mesh)
         ac.ground.push(mesh)
       }
@@ -181,20 +185,30 @@ export class World {
       ac.entities.push(e)
     }
 
+    // Playa a ambos lados (dunas y orilla continuas entre bloques)
+    for (const sx of [-1, 1]) {
+      const b = this.beachPool.pop() ?? buildBeachPiece()
+      shapeBeach(b, sx < 0 ? -32 : 3.3, sx < 0 ? -3.3 : 32, start, ac.end)
+      this.group.add(b)
+      ac.beach.push(b)
+    }
+
     // Decoración a los lados. En vista lateral nada del lado de la cámara (x < 0).
-    const count = 7
     for (const sx of [-1, 1]) {
       if (side && sx < 0) continue
-      for (let i = 0; i < count; i++) {
-        const kind = this.rng.pick(DECOR_KINDS)
-        const obj = this.decorPool.get(kind)
-        const near = kind === 'torch' || kind === 'post' || kind === 'bush'
-        const minX = near ? 5.2 : kind === 'hut' ? 9.5 : 6.5
-        obj.position.set(sx * (minX + this.rng.range(0, near ? 1.5 : 7)), -0.35, start + this.rng.range(0, CHUNK_LENGTH))
-        obj.rotation.y = this.rng.range(0, Math.PI * 2)
-        obj.scale.setScalar(0.85 + this.rng.range(0, 0.4))
+      for (let i = 0; i < 12; i++) {
+        let r = this.rng.range(0, DECOR_TOTAL)
+        const d = DECOR.find((o) => (r -= o.weight) < 0) ?? DECOR[0]
+        const x = sx * this.rng.range(d.x[0], d.x[1])
+        const z = start + this.rng.range(0, CHUNK_LENGTH)
+        const y = beachHeight(x, z)
+        if (y < -0.6 && d.kind !== 'rock') continue // no en el agua
+        const obj = this.decorPool.get(d.kind)
+        obj.position.set(x, y, z)
+        obj.rotation.y = d.kind === 'sign' || d.kind === 'torch' ? (sx < 0 ? Math.PI / 2 : -Math.PI / 2) : this.rng.range(0, Math.PI * 2)
+        obj.scale.setScalar(0.85 + this.rng.range(0, 0.35))
         this.group.add(obj)
-        ac.decor.push({ kind, obj })
+        ac.decor.push({ kind: d.kind, obj })
       }
     }
 
@@ -236,6 +250,10 @@ export class World {
       this.group.remove(p.obj)
       this.platformPool.push(p.obj)
     }
+    for (const b of c.beach) {
+      this.group.remove(b)
+      this.beachPool.push(b)
+    }
     for (const d of c.decor) this.decorPool.release(d.obj)
   }
 
@@ -254,7 +272,6 @@ export class World {
         this.loose.splice(i, 1)
       }
     }
-    this.beachL.position.z = this.beachR.position.z = playerZ
 
     const t = this.time
     for (const c of this.chunks) {
@@ -270,7 +287,7 @@ export class World {
       for (const d of c.decor) {
         if (d.kind === 'torch') {
           const f = d.obj.getObjectByName('flame')
-          if (f) f.scale.set(0.2, 0.5 + Math.sin(t * 20 + d.obj.position.z) * 0.08, 0.2)
+          if (f) f.scale.set(0.18, 0.5 + Math.sin(t * 20 + d.obj.position.z) * 0.08, 0.18)
         }
       }
     }
@@ -287,6 +304,14 @@ export class World {
         if (!e.magnet) e.obj.position.y = e.y + Math.sin(t * 3 + e.z) * 0.08
         break
       case 'magmo':
+        if (anim) {
+          const steam = anim.getObjectByName('steam')
+          if (steam) {
+            const k = (t * 0.8 + e.z * 0.1) % 1
+            steam.position.y = 1.2 + k * 0.6
+            ;(steam as THREE.Sprite).material.opacity = 0.35 * (1 - k)
+          }
+        }
         if (anim && e.state === 'idle') {
           anim.rotation.z = Math.sin(t * 8 + e.z) * 0.15
           e.obj.position.x = e.x + Math.sin(t * 1.5 + e.z) * 0.25

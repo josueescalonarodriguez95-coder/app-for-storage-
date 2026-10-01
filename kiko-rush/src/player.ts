@@ -14,7 +14,7 @@ import {
 import type { CameraMode } from './level/types.ts'
 import { buildChispa, buildCharacter, poseRig, tintRig } from './models/characters.ts'
 import type { ChispaModel, Pose, Rig } from './models/characters.ts'
-import { blobShadow, glow } from './models/materials.ts'
+import { blobShadow, glow, paint } from './models/materials.ts'
 import type { CharacterId } from './save.ts'
 import type { Entity, PlatformRT, World } from './world.ts'
 import { laneX } from './world.ts'
@@ -79,11 +79,11 @@ export class Player {
     this.root.add(this.spinFx)
     // Patineta
     this.skate = new THREE.Group()
-    const board = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.07, 1.2), new THREE.MeshToonMaterial({ color: 0x9fc24b }))
+    const board = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.07, 1.2), paint(0xa8c650, { roughness: 0.4 }))
     board.position.y = 0.06
     this.skate.add(board)
     for (const z of [-0.4, 0.4]) {
-      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.5, 8), new THREE.MeshToonMaterial({ color: 0x333333 }))
+      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.5, 12), paint(0x333333, { roughness: 0.6 }))
       w.rotation.z = Math.PI / 2
       w.position.set(0, -0.02, z)
       this.skate.add(w)
@@ -205,7 +205,7 @@ export class Player {
 
     const targetX = mode === 'side' ? 0 : laneX(this.lane)
     if (mode === 'side') this.lane = 0
-    const lateral = LANE_CHANGE_SPEED * (this.wet ? 0.45 : 1) * dt
+    const lateral = LANE_CHANGE_SPEED * Math.max(1, speed / 12) * (this.wet ? 0.45 : 1) * dt
     this.x += THREE.MathUtils.clamp(targetX - this.x, -lateral, lateral)
 
     this.slide = Math.max(0, this.slide - dt)

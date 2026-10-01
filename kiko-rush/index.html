@@ -14,6 +14,7 @@
   <body>
     <div id="app">
       <canvas id="game"></canvas>
+      <div id="vignette"></div>
 
       <!-- HUD -->
       <div id="hud" hidden>
@@ -26,6 +27,7 @@
         <div class="hud-center">
           <div class="distance"><b id="h-dist">0</b><span>m</span></div>
           <div class="score" id="h-score">0</div>
+          <div class="speedo"><span class="speedo-bar"><i id="h-speedbar"></i></span><span id="h-speed">40 km/h</span></div>
           <div class="mult" id="h-mult" hidden>x2</div>
         </div>
         <div class="hud-right">
@@ -36,11 +38,6 @@
         <div id="boss-bar" hidden>
           <span id="boss-name">Capitán Almeja</span>
           <div id="boss-hearts"></div>
-        </div>
-        <div id="chase-hints">
-          <div class="slot" data-slot="left"></div>
-          <div class="slot" data-slot="center"></div>
-          <div class="slot" data-slot="right"></div>
         </div>
       </div>
 
@@ -80,6 +77,7 @@
             <span><span class="ico gem"></span><b id="bank-gems">0</b></span>
             <span class="best">Récord <b id="bank-best">0</b> m</span>
             <button class="icon-btn" id="btn-sound" aria-label="Sonido">♪</button>
+            <button class="chip-btn" id="btn-quality">Gráficos: Alta</button>
           </footer>
         </div>
       </section>

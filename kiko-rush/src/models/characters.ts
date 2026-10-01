@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import type { CharacterId } from '../save.ts'
-import { glow, glowSprite, toon, toonUnique } from './materials.ts'
+import { glow, glowSprite, paint, paintUnique, shadows } from './materials.ts'
+import { furTex } from './textures.ts'
 
 // Kiko y los personajes cosméticos. Todos miran hacia +z y comparten el mismo esqueleto,
 // así que cambiar de personaje no cambia nada del juego: sólo cómo se ve.
@@ -15,7 +16,7 @@ export interface Rig {
   legL: THREE.Group
   legR: THREE.Group
   tail: THREE.Group[]
-  tinted: THREE.MeshToonMaterial[] // se pintan de negro al quemarse
+  tinted: THREE.MeshStandardMaterial[] // se pintan de negro al quemarse
   baseColors: THREE.Color[]
 }
 
@@ -39,10 +40,10 @@ const LOOKS: Record<CharacterId, Look> = {
   rufo: { fur: 0x9c8f7c, belly: 0xc7bca8, dark: 0x4b4136, snout: 'blunt', tail: 'stub', ears: false, goggles: false, backpack: true, mask: 0x3a3029 },
 }
 
-const sphere = new THREE.SphereGeometry(1, 16, 12)
-const lowSphere = new THREE.SphereGeometry(1, 10, 8)
-const cyl = new THREE.CylinderGeometry(1, 1, 1, 10)
-const cone = new THREE.ConeGeometry(1, 1, 10)
+const sphere = new THREE.SphereGeometry(1, 32, 24)
+const lowSphere = new THREE.SphereGeometry(1, 16, 12)
+const cyl = new THREE.CylinderGeometry(1, 1, 1, 20)
+const cone = new THREE.ConeGeometry(1, 1, 20)
 
 function mesh(geo: THREE.BufferGeometry, mat: THREE.Material, s: [number, number, number], p: [number, number, number] = [0, 0, 0]): THREE.Mesh {
   const m = new THREE.Mesh(geo, mat)
@@ -53,17 +54,19 @@ function mesh(geo: THREE.BufferGeometry, mat: THREE.Material, s: [number, number
 
 export function buildCharacter(id: CharacterId): Rig {
   const look = LOOKS[id]
-  const tinted: THREE.MeshToonMaterial[] = []
+  const tinted: THREE.MeshStandardMaterial[] = []
+  const f = furTex()
   const unique = (c: number) => {
-    const m = toonUnique(c)
+    const m = paintUnique(c, { roughness: 0.92, map: f.map, normalMap: f.normalMap, normalScale: 0.5 })
     tinted.push(m)
     return m
   }
   const fur = unique(look.fur)
   const belly = unique(look.belly)
   const dark = unique(look.dark)
-  const black = toon(0x1a1210)
-  const white = toon(0xffffff)
+  const black = paint(0x140c08, { roughness: 0.12 })
+  const white = paint(0xfbf7f0, { roughness: 0.18 })
+  const toon = (c: number) => paint(c, { roughness: 0.55 })
 
   const root = new THREE.Group()
   const squash = new THREE.Group()
@@ -73,7 +76,7 @@ export function buildCharacter(id: CharacterId): Rig {
   squash.add(pivot)
 
   // Cuerpo
-  pivot.add(mesh(sphere, fur, [0.42, 0.45, 0.4], [0, 0, 0]))
+  pivot.add(mesh(sphere, fur, [0.42, 0.46, 0.4], [0, 0, 0]))
   pivot.add(mesh(sphere, belly, [0.3, 0.34, 0.2], [0, -0.02, 0.24]))
 
   // Cabeza
@@ -104,17 +107,19 @@ export function buildCharacter(id: CharacterId): Rig {
     }
     head.add(mesh(sphere, white, [0.085, 0.1, 0.06], [sx * 0.13, 0.07, 0.3]))
     head.add(mesh(sphere, black, [0.045, 0.06, 0.04], [sx * 0.13, 0.07, 0.35]))
+    head.add(mesh(lowSphere, glow(0xffffff), [0.014, 0.014, 0.01], [sx * 0.13 + 0.015, 0.095, 0.385]))
     if (look.ears) head.add(mesh(sphere, dark, [0.09, 0.09, 0.05], [sx * 0.24, 0.28, -0.04]))
   }
   if (look.goggles) {
-    const band = mesh(new THREE.TorusGeometry(0.34, 0.035, 6, 20), toon(0x5a3a1e), [1, 1, 1], [0, 0.17, 0])
+    const brass = paint(0xc9963c, { roughness: 0.28, metalness: 0.9 })
+    const band = mesh(new THREE.TorusGeometry(0.34, 0.035, 10, 40), paint(0x4a2e16, { roughness: 0.6 }), [1, 1, 1], [0, 0.17, 0])
     band.rotation.x = Math.PI / 2 - 0.25
     head.add(band)
     for (const sx of [-1, 1]) {
-      const rim = mesh(new THREE.TorusGeometry(0.1, 0.035, 6, 14), toon(0x7a5230), [1, 1, 1], [sx * 0.12, 0.26, 0.24])
+      const rim = mesh(new THREE.TorusGeometry(0.1, 0.035, 10, 28), brass, [1, 1, 1], [sx * 0.12, 0.26, 0.24])
       rim.rotation.x = -0.4
       head.add(rim)
-      head.add(mesh(sphere, glow(0x7fe6ff), [0.085, 0.085, 0.03], [sx * 0.12, 0.26, 0.245]).rotateX(-0.4))
+      head.add(mesh(sphere, paint(0x6fd8f0, { roughness: 0.04, metalness: 0.3, emissive: 0x0c3a46 }), [0.085, 0.085, 0.03], [sx * 0.12, 0.26, 0.245]).rotateX(-0.4))
     }
   }
   if (look.flower) {
@@ -147,8 +152,8 @@ export function buildCharacter(id: CharacterId): Rig {
 
   // Mochila de bambú
   if (look.backpack) {
-    const bamboo = toon(0x9fc24b)
-    const knot = toon(0x6f8f2a)
+    const bamboo = paint(0xa8c650, { roughness: 0.35 })
+    const knot = paint(0x6f8f2a, { roughness: 0.45 })
     for (const x of [-0.14, 0, 0.14]) {
       pivot.add(mesh(cyl, bamboo, [0.07, 0.55, 0.07], [x, 0.08, -0.42]))
       pivot.add(mesh(cyl, knot, [0.075, 0.03, 0.075], [x, 0.18, -0.42]))
@@ -179,8 +184,7 @@ export function buildCharacter(id: CharacterId): Rig {
     }
   }
 
-  // Sombra
-  root.userData.shadow = null
+  shadows(root)
 
   return { root, squash, pivot, head, armL, armR, legL, legR, tail, tinted, baseColors: tinted.map((m) => m.color.clone()) }
 }
@@ -284,7 +288,7 @@ export function buildChispa(): ChispaModel {
   root.add(mesh(sphere, glow(0xe8fffb), [0.08, 0.08, 0.08], [0, 0.03, 0.12]))
   const wings: THREE.Mesh[] = []
   for (const sx of [-1, 1]) {
-    const w = mesh(sphere, toon(0x8be08b), [0.2, 0.03, 0.1], [sx * 0.2, 0.1, 0])
+    const w = mesh(sphere, paint(0x8be08b, { roughness: 0.3, emissive: 0x1f5a2a }), [0.2, 0.03, 0.1], [sx * 0.2, 0.1, 0])
     root.add(w)
     wings.push(w)
   }

@@ -42,19 +42,19 @@ export class CameraRig {
 
   private shot(mode: CameraMode, p: THREE.Vector3, speed: number, out: Shot): Shot {
     const narrow = this.camera.aspect < 0.8 // celular en vertical: la cámara se aleja para ver los 3 carriles
-    const back = (speed - 10) * 0.12
+    const back = (speed - 11) * 0.1
     const y = this.yFollow
     switch (mode) {
       case 'run':
         out.pos.set(p.x * 0.5, 3.4 + y + back * 0.4 + (narrow ? 1.2 : 0), p.z - 6.2 - back - (narrow ? 2 : 0))
         out.look.set(p.x * 0.6, 1.1 + y * 0.8, p.z + 9)
-        out.fov = narrow ? 68 : 60
+        out.fov = (narrow ? 68 : 60) + Math.max(0, speed - 11) * 0.4 // se abre con la velocidad
         break
       case 'chase':
-        // De frente y bajita, con la amenaza al fondo
-        out.pos.set(p.x * 0.35, 5.2 + y + (narrow ? 1.5 : 0), p.z + 9 + (narrow ? 2.5 : 0))
-        out.look.set(p.x * 0.35, 0.6 + y * 0.8, p.z - 4)
-        out.fov = narrow ? 70 : 62
+        // Misma vista hacia el frente, un poco más alta y atrás: el coco gigante rueda detrás de Kiko
+        out.pos.set(p.x * 0.5, 5.3 + y + back * 0.4 + (narrow ? 1.2 : 0), p.z - 9.4 - back - (narrow ? 2 : 0))
+        out.look.set(p.x * 0.6, 0.9 + y * 0.8, p.z + 8)
+        out.fov = (narrow ? 70 : 62) + Math.max(0, speed - 11) * 0.4
         break
       case 'side':
         out.pos.set(-13 - (narrow ? 4 : 0), 3.0 + y, p.z + 4.5)
@@ -81,7 +81,7 @@ export class CameraRig {
       this.look.copy(a.look.lerp(b.look, k))
       fov = THREE.MathUtils.lerp(a.fov, b.fov, k)
     }
-    if (this.mode === 'chase') this.shake = Math.max(this.shake, 0.06) // temblor suave
+    if (this.mode === 'chase') this.shake = Math.max(this.shake, 0.08) // temblor suave: el coco hace vibrar el piso
     if (this.shake > 0) {
       pos.x += (Math.random() - 0.5) * this.shake
       pos.y += (Math.random() - 0.5) * this.shake

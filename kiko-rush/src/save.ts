@@ -90,6 +90,7 @@ export interface SaveData {
   seenHints: string[]
   seenIntro: boolean
   muted: boolean
+  quality: 'alta' | 'media' | 'baja'
   runs: number
 }
 
@@ -113,6 +114,7 @@ function fresh(): SaveData {
     seenHints: [],
     seenIntro: false,
     muted: false,
+    quality: typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches ? 'media' : 'alta',
     runs: 0,
   }
 }

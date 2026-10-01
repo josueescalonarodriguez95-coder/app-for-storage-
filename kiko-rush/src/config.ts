@@ -31,14 +31,31 @@ export const CHISPA_INVINCIBLE_TIME = 8
 export const CHISPA_MAGNET_RADIUS = 4.5
 export const MAGNET_RADIUS = 9
 
-/** Tabla de velocidad y dificultad por distancia (sección "Generación del nivel y dificultad"). */
+/**
+ * Velocidad que sube poco a poco mientras corres (sin saltos bruscos).
+ * Sigue la tabla del documento pero interpolada, y un poco más viva: arranca en 11 m/s y llega a 24.
+ */
+const SPEED_CURVE: [number, number][] = [
+  [0, 11],
+  [400, 12.5],
+  [1000, 14.5],
+  [2000, 16.5],
+  [3500, 18.5],
+  [6000, 21],
+  [10000, 24],
+]
+export const MAX_SPEED = 24
+export const MIN_SPEED = SPEED_CURVE[0][1]
+
 export function speedAt(distance: number): number {
-  if (distance < 500) return 10
-  if (distance < 1500) return 12
-  if (distance < 3000) return 14
-  if (distance < 6000) return 16
-  const extra = Math.floor((distance - 6000) / 1000) * 0.5
-  return Math.min(22, 16 + 0.5 + extra)
+  for (let i = 1; i < SPEED_CURVE.length; i++) {
+    const [d1, v1] = SPEED_CURVE[i]
+    if (distance <= d1) {
+      const [d0, v0] = SPEED_CURVE[i - 1]
+      return v0 + ((v1 - v0) * (distance - d0)) / (d1 - d0)
+    }
+  }
+  return MAX_SPEED
 }
 
 export function difficultyRangeAt(distance: number): [number, number] {
