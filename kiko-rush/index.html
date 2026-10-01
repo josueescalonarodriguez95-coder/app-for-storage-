@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b3d5c" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="description" content="Kiko Rush: un endless runner 3D con alma de plataformero de los 90 en el Archipiélago Guayaba." />
+    <title>Kiko Rush</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game"></canvas>
+
+      <!-- HUD -->
+      <div id="hud" hidden>
+        <div class="hud-left">
+          <div class="counter"><span class="ico guava"></span><b id="h-fruits">0</b></div>
+          <div class="counter small"><span class="ico gem"></span><b id="h-gems">0</b></div>
+          <div class="lives" id="h-lives"></div>
+          <div class="chispa-pips" id="h-chispa"></div>
+        </div>
+        <div class="hud-center">
+          <div class="distance"><b id="h-dist">0</b><span>m</span></div>
+          <div class="score" id="h-score">0</div>
+          <div class="mult" id="h-mult" hidden>x2</div>
+        </div>
+        <div class="hud-right">
+          <button class="icon-btn" id="btn-pause" aria-label="Pausa">❚❚</button>
+          <div class="powerups" id="h-powerups"></div>
+          <div class="spin-cd" id="h-spin" title="Giro"><i></i></div>
+        </div>
+        <div id="boss-bar" hidden>
+          <span id="boss-name">Capitán Almeja</span>
+          <div id="boss-hearts"></div>
+        </div>
+        <div id="chase-hints">
+          <div class="slot" data-slot="left"></div>
+          <div class="slot" data-slot="center"></div>
+          <div class="slot" data-slot="right"></div>
+        </div>
+      </div>
+
+      <div id="banner" hidden></div>
+      <div id="chispa-says" hidden><span class="chispa-dot"></span><p id="chispa-text"></p></div>
+      <div id="toast" hidden></div>
+
+      <!-- Título -->
+      <section id="screen-title" class="screen">
+        <div class="title-wrap">
+          <header class="logo">
+            <h1><span>Kiko</span><span>Rush</span></h1>
+            <p class="tagline">Archipiélago Guayaba</p>
+          </header>
+          <div class="island-card" id="island-card">
+            <div class="island-head">
+              <span class="island-num">Isla 1</span>
+              <b>Playa Guayaba</b>
+            </div>
+            <div class="progress"><i id="island-bar"></i></div>
+            <p id="island-status">Supera 1,500 m para que aparezca el jefe.</p>
+          </div>
+          <div class="menu-buttons">
+            <button class="btn big primary" id="btn-play">Correr</button>
+            <div class="row">
+              <button class="btn" id="btn-endless">Infinito</button>
+              <button class="btn" id="btn-daily">Reto diario</button>
+            </div>
+            <div class="row">
+              <button class="btn ghost" id="btn-upgrades">Mejoras</button>
+              <button class="btn ghost" id="btn-missions">Misiones</button>
+              <button class="btn ghost" id="btn-chars">Personajes</button>
+            </div>
+          </div>
+          <footer class="bank">
+            <span><span class="ico guava"></span><b id="bank-fruits">0</b></span>
+            <span><span class="ico gem"></span><b id="bank-gems">0</b></span>
+            <span class="best">Récord <b id="bank-best">0</b> m</span>
+            <button class="icon-btn" id="btn-sound" aria-label="Sonido">♪</button>
+          </footer>
+        </div>
+      </section>
+
+      <!-- Historia (primera vez) -->
+      <section id="screen-story" class="screen modal" hidden>
+        <div class="panel story">
+          <p class="eyebrow" id="story-step">1 / 3</p>
+          <p id="story-text"></p>
+          <div class="row end">
+            <button class="btn ghost" id="btn-story-skip">Saltar</button>
+            <button class="btn primary" id="btn-story-next">Siguiente</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pausa -->
+      <section id="screen-pause" class="screen modal" hidden>
+        <div class="panel">
+          <h2>Pausa</h2>
+          <div class="controls-help" id="controls-help"></div>
+          <div class="row end">
+            <button class="btn ghost" id="btn-quit">Salir</button>
+            <button class="btn primary" id="btn-resume">Seguir</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Fin de partida -->
+      <section id="screen-over" class="screen modal" hidden>
+        <div class="panel over">
+          <p class="eyebrow" id="over-eyebrow">Fin de la carrera</p>
+          <div class="big-dist"><b id="over-dist">0</b> m</div>
+          <p class="new-record" id="over-record" hidden>¡Nuevo récord!</p>
+          <dl class="stats">
+            <div><dt>Puntos</dt><dd id="over-score">0</dd></div>
+            <div><dt>Guayabas</dt><dd id="over-fruits">0</dd></div>
+            <div><dt>Gemas</dt><dd id="over-gems">0</dd></div>
+            <div><dt>Récord</dt><dd id="over-best">0 m</dd></div>
+          </dl>
+          <ul class="done-missions" id="over-missions"></ul>
+          <div class="row end">
+            <button class="btn ghost" id="btn-menu">Menú</button>
+            <button class="btn" id="btn-revive" hidden>Revivir</button>
+            <button class="btn big primary" id="btn-again">Otra vez</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Mejoras -->
+      <section id="screen-upgrades" class="screen modal" hidden>
+        <div class="panel wide">
+          <h2>Mejoras</h2>
+          <p class="sub">Cada power-up dura más al subir de nivel. Se pagan con guayabas.</p>
+          <ul class="list" id="upgrade-list"></ul>
+          <div class="row end"><button class="btn primary" data-close>Listo</button></div>
+        </div>
+      </section>
+
+      <!-- Misiones -->
+      <section id="screen-missions" class="screen modal" hidden>
+        <div class="panel wide">
+          <h2>Misiones</h2>
+          <p class="sub">Se renuevan cada día; la semanal, cada lunes.</p>
+          <ul class="list" id="mission-list"></ul>
+          <div class="row end"><button class="btn primary" data-close>Listo</button></div>
+        </div>
+      </section>
+
+      <!-- Personajes -->
+      <section id="screen-chars" class="screen modal" hidden>
+        <div class="panel wide">
+          <h2>Personajes</h2>
+          <p class="sub">Sólo cambian la apariencia: nadie corre más rápido por pagar.</p>
+          <ul class="list" id="char-list"></ul>
+          <div class="row end"><button class="btn primary" data-close>Listo</button></div>
+        </div>
+      </section>
+
+      <div id="loading">Cargando la isla…</div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
